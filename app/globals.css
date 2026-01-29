@@ -1,0 +1,182 @@
+/**
+ * ESTILOS GLOBALES DE LA APLICACIÓN
+ * 
+ * Este archivo contiene los estilos CSS que se aplican a toda la aplicación.
+ * Utiliza Tailwind CSS para la mayoría de los estilos.
+ */
+
+/* Importar las directivas base de Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos base personalizados */
+@layer base {
+  /* Configuración del documento HTML */
+  html {
+    @apply scroll-smooth; /* Desplazamiento suave al hacer scroll */
+  }
+
+  /* Estilos del body (cuerpo de la página) */
+  body {
+    @apply bg-ice text-gray-900 antialiased; /* Fondo claro, texto oscuro, fuentes suavizadas */
+  }
+
+  /* Estilos para títulos principales */
+  h1 {
+    @apply text-4xl font-bold text-navy; /* Tamaño grande, negrita, color azul marino */
+  }
+
+  h2 {
+    @apply text-3xl font-semibold text-navy; /* Tamaño grande, semi-negrita */
+  }
+
+  h3 {
+    @apply text-2xl font-semibold text-navy-light; /* Tamaño mediano */
+  }
+
+  /* Estilos para párrafos */
+  p {
+    @apply text-base leading-relaxed; /* Tamaño normal, espaciado cómodo entre líneas */
+  }
+}
+
+/* Componentes personalizados reutilizables */
+@layer components {
+  /* Estilo para botones primarios (azul marino) */
+  .btn-primary {
+    @apply bg-navy text-white px-6 py-3 rounded-lg font-semibold 
+           hover:bg-navy-light transition-colors duration-200 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    /* Explicación:
+       - bg-navy: fondo azul marino
+       - px-6 py-3: padding horizontal y vertical
+       - rounded-lg: bordes redondeados
+       - hover:bg-navy-light: cambia color al pasar el mouse
+       - transition-colors: animación suave del cambio de color
+       - disabled: estilos cuando el botón está deshabilitado
+    */
+  }
+
+  /* Estilo para botones secundarios (transparente con borde) */
+  .btn-secondary {
+    @apply border-2 border-navy text-navy px-6 py-3 rounded-lg font-semibold 
+           hover:bg-navy hover:text-white transition-all duration-200;
+  }
+
+  /* Estilo para tarjetas (cards) */
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200;
+    /* Explicación:
+       - bg-white: fondo blanco
+       - rounded-xl: bordes muy redondeados
+       - shadow-lg: sombra grande
+       - hover:shadow-xl: sombra aún mayor al pasar el mouse
+       - transition-shadow: animación suave de la sombra
+    */
+  }
+
+  /* Estilo para inputs de formulario */
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg 
+           focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 
+           transition-all duration-200;
+    /* Explicación:
+       - focus:border-navy: borde azul al hacer clic
+       - focus:outline-none: quitar borde por defecto del navegador
+       - focus:ring-2: anillo de enfoque para accesibilidad
+    */
+  }
+
+  /* Estilo para labels de formulario */
+  .input-label {
+    @apply block text-sm font-semibold text-gray-700 mb-2;
+  }
+
+  /* Contenedor con ancho máximo centrado */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    /* Explicación:
+       - max-w-7xl: ancho máximo de 80rem (1280px)
+       - mx-auto: centrar horizontalmente
+       - px-4/6/8: padding horizontal responsive (cambia según tamaño de pantalla)
+    */
+  }
+
+  /* Estilo para secciones de la página */
+  .section {
+    @apply py-16 sm:py-20 lg:py-24;
+    /* Padding vertical que aumenta en pantallas más grandes */
+  }
+}
+
+/* Utilidades personalizadas */
+@layer utilities {
+  /* Efecto de onda náutica */
+  .wave-effect {
+    background: linear-gradient(135deg, #002855 0%, #003d82 100%);
+    /* Gradiente diagonal de azul marino a azul más claro */
+  }
+
+  /* Animación de entrada desde abajo */
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  /* Animación de pulso para elementos importantes */
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Definición de animaciones personalizadas */
+@keyframes slideUp {
+  from {
+    opacity: 0; /* Empieza invisible */
+    transform: translateY(30px); /* Empieza 30px más abajo */
+  }
+  to {
+    opacity: 1; /* Termina visible */
+    transform: translateY(0); /* Termina en su posición normal */
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1; /* Completamente visible */
+  }
+  50% {
+    opacity: 0.8; /* Ligeramente transparente */
+  }
+}
+
+/* Estilos para scrollbar personalizado (solo navegadores WebKit como Chrome/Safari) */
+::-webkit-scrollbar {
+  width: 10px; /* Ancho de la barra de scroll */
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-ice; /* Fondo de la pista del scroll */
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-navy rounded-full; /* Color y forma del thumb del scroll */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-navy-light; /* Color más claro al pasar el mouse */
+}
+
+/* Estilos para impresión (cuando se imprime la página) */
+@media print {
+  /* Ocultar elementos que no se deben imprimir */
+  nav,
+  .no-print {
+    display: none;
+  }
+
+  /* Fondo blanco para ahorrar tinta */
+  body {
+    @apply bg-white;
+  }
+}
