@@ -1,185 +1,132 @@
 /**
  * COMPONENTE DE FOOTER (PIE DE PÁGINA)
- * 
- * Este componente muestra el pie de página en todas las páginas.
- * Incluye:
- * - Información de contacto
- * - Links rápidos
- * - Copyright
+ *
+ * Pie de página moderno con estilo tropical.
+ * Incluye: sobre nosotros, links, contacto, y copyright.
  */
 
 import Link from 'next/link';
-import { Anchor, Mail, Phone, MapPin } from 'lucide-react';
+import Image from 'next/image';
+import { Anchor, Mail, Waves } from 'lucide-react';
 
 export default function Footer() {
-  // Año actual para el copyright
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-navy text-white">
-      {/* 
-        ==================
-        SECCIÓN PRINCIPAL DEL FOOTER
-        ==================
-      */}
-      <div className="container-custom py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* 
-            ==================
-            COLUMNA 1: SOBRE NOSOTROS
-            ==================
-          */}
-          <div>
-            {/* Logo y nombre */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-maritime-gold rounded-full flex items-center justify-center">
-                <Anchor className="w-6 h-6 text-navy" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg leading-tight">Americas Boating Club</span>
-                <span className="text-sm text-ice leading-tight">Boqueron Power Squadron</span>
-              </div>
-            </div>
-            
-            {/* Descripción */}
-            <p className="text-ice leading-relaxed mb-4">
-              Dedicados a promover la navegación segura y responsable en las aguas 
-              de Puerto Rico desde hace más de 50 años.
-            </p>
-            
-            {/* Insignia de certificación */}
-            <div className="inline-flex items-center gap-2 bg-navy-light px-4 py-2 rounded-lg">
-              <Anchor className="w-5 h-5 text-maritime-gold" />
-              <span className="text-sm font-semibold">Certificación Ley 430 Aprobada</span>
-            </div>
-          </div>
+    <footer className="relative">
+      {/* Ola decorativa superior */}
+      <div className="bg-white">
+        <svg viewBox="0 0 1440 60" className="w-full h-12">
+          <path fill="#002855" d="M0,30 C360,60 720,0 1080,30 C1260,45 1380,40 1440,30 L1440,60 L0,60 Z" />
+        </svg>
+      </div>
 
-          {/* 
-            ==================
-            COLUMNA 2: LINKS RÁPIDOS
-            ==================
-          */}
-          <div>
-            <h3 className="font-bold text-xl mb-4">Enlaces Rápidos</h3>
-            <ul className="space-y-3">
-              {/* 
-                space-y-3: Espaciado vertical entre elementos de la lista
-              */}
-              <li>
-                <Link 
-                  href="/" 
-                  className="text-ice hover:text-maritime-gold transition-colors duration-200 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-maritime-gold rounded-full" />
-                  Inicio
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/matricula" 
-                  className="text-ice hover:text-maritime-gold transition-colors duration-200 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-maritime-gold rounded-full" />
-                  Matrícula Digital
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/examen" 
-                  className="text-ice hover:text-maritime-gold transition-colors duration-200 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-maritime-gold rounded-full" />
-                  Examen en Línea
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  href="/admin" 
-                  className="text-ice hover:text-maritime-gold transition-colors duration-200 flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 bg-maritime-gold rounded-full" />
-                  Panel Administrativo
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* 
-            ==================
-            COLUMNA 3: CONTACTO
-            ==================
-          */}
-          <div>
-            <h3 className="font-bold text-xl mb-4">Contacto</h3>
-            <div className="space-y-4">
-              {/* Ubicación */}
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-maritime-gold flex-shrink-0 mt-1" />
+      <div className="bg-navy text-white">
+        <div className="container-custom py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {/* Columna 1: Sobre Nosotros */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-20 h-20 relative flex-shrink-0">
+                  <Image
+                    src="/images/bps-logo.png"
+                    alt="BPS Logo"
+                    fill
+                    className="object-contain rounded-full"
+                    sizes="80px"
+                  />
+                </div>
                 <div>
-                  <p className="text-ice">
-                    Boqueron, Puerto Rico
-                  </p>
+                  <span className="font-bold text-xl block leading-tight">Americas Boating Club</span>
+                  <span className="text-base text-ocean-200 leading-tight">Boquerón Power Squadron</span>
                 </div>
               </div>
+              <p className="text-white/70 leading-relaxed mb-5">
+                Dedicados a promover la navegación segura y responsable en las aguas
+                de Puerto Rico desde hace más de 50 años.
+              </p>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
+                <Anchor className="w-4 h-4 text-maritime-gold" />
+                <span className="text-sm font-semibold text-white/90">Certificación Ley 430</span>
+              </div>
+            </div>
 
-              {/* Email */}
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-maritime-gold flex-shrink-0 mt-1" />
-                <div>
-                  <a 
-                    href="mailto:info@boqueron-squadron.org" 
-                    className="text-ice hover:text-maritime-gold transition-colors duration-200"
+            {/* Columna 2: Enlaces Rápidos */}
+            <div>
+              <h3 className="font-bold text-lg mb-5 text-white">Navegación</h3>
+              <ul className="space-y-3">
+                {[
+                  { href: '/', label: 'Inicio' },
+                  { href: '/somos', label: 'Somos' },
+                  { href: '/matricula', label: 'Matrícula Digital' },
+                  { href: '/practica', label: 'Examen de Práctica' },
+                  { href: '/examen', label: 'Examen Oficial' },
+                  { href: '/admin', label: 'Panel Administrativo' },
+                ].map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-white/60 hover:text-ocean-300 transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <div className="w-1.5 h-1.5 bg-ocean-400 rounded-full" />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Columna 3: Legal */}
+            <div>
+              <h3 className="font-bold text-lg mb-5 text-white">Legal</h3>
+              <ul className="space-y-3">
+                {[
+                  { href: '/privacidad', label: 'Política de Privacidad' },
+                  { href: '/terminos', label: 'Términos y Condiciones' },
+                ].map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-white/60 hover:text-ocean-300 transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <div className="w-1.5 h-1.5 bg-ocean-400 rounded-full" />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Columna 4: Contacto (solo email) */}
+            <div>
+              <h3 className="font-bold text-lg mb-5 text-white">Contacto</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-ocean-300 flex-shrink-0 mt-0.5" />
+                  <a
+                    href="mailto:info@boqueron-squadron.org"
+                    className="text-white/60 hover:text-ocean-300 transition-colors"
                   >
                     info@boqueron-squadron.org
-                  </a>
-                </div>
-              </div>
-
-              {/* Teléfono */}
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-maritime-gold flex-shrink-0 mt-1" />
-                <div>
-                  <a 
-                    href="tel:+17871234567" 
-                    className="text-ice hover:text-maritime-gold transition-colors duration-200"
-                  >
-                    (787) 123-4567
                   </a>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 
-        ==================
-        BARRA DE COPYRIGHT
-        ==================
-      */}
-      <div className="border-t border-navy-light">
-        <div className="container-custom py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-ice text-sm">
-            {/* Copyright */}
-            <p>
-              &copy; {currentYear} Americas Boating Club - Boqueron Power Squadron. 
-              Todos los derechos reservados.
-            </p>
-            
-            {/* Links legales */}
-            <div className="flex gap-6">
-              <Link 
-                href="#" 
-                className="hover:text-maritime-gold transition-colors duration-200"
-              >
-                Privacidad
-              </Link>
-              <Link 
-                href="#" 
-                className="hover:text-maritime-gold transition-colors duration-200"
-              >
-                Términos
-              </Link>
+        {/* Barra de Copyright */}
+        <div className="border-t border-white/10">
+          <div className="container-custom py-6">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white/50 text-sm">
+              <p>
+                &copy; {currentYear} Americas Boating Club - Boquerón Power Squadron.
+                Todos los derechos reservados.
+              </p>
+              <div className="flex items-center gap-2">
+                <Waves className="w-4 h-4 text-ocean-400" />
+                <span>Navega Seguro, Navega Legal</span>
+              </div>
             </div>
           </div>
         </div>

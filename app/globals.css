@@ -1,182 +1,251 @@
-/**
- * ESTILOS GLOBALES DE LA APLICACIÓN
- * 
- * Este archivo contiene los estilos CSS que se aplican a toda la aplicación.
- * Utiliza Tailwind CSS para la mayoría de los estilos.
- */
-
-/* Importar las directivas base de Tailwind CSS */
+/* Directivas de Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Estilos base personalizados */
+/* =============================================
+   ESTILOS BASE
+   ============================================= */
 @layer base {
-  /* Configuración del documento HTML */
   html {
-    @apply scroll-smooth; /* Desplazamiento suave al hacer scroll */
+    @apply scroll-smooth;
   }
 
-  /* Estilos del body (cuerpo de la página) */
   body {
-    @apply bg-ice text-gray-900 antialiased; /* Fondo claro, texto oscuro, fuentes suavizadas */
+    @apply bg-white text-gray-900 antialiased;
   }
 
-  /* Estilos para títulos principales */
   h1 {
-    @apply text-4xl font-bold text-navy; /* Tamaño grande, negrita, color azul marino */
+    @apply text-4xl font-bold text-navy;
   }
 
   h2 {
-    @apply text-3xl font-semibold text-navy; /* Tamaño grande, semi-negrita */
+    @apply text-3xl font-semibold text-navy;
   }
 
   h3 {
-    @apply text-2xl font-semibold text-navy-light; /* Tamaño mediano */
+    @apply text-2xl font-semibold text-navy;
   }
 
-  /* Estilos para párrafos */
   p {
-    @apply text-base leading-relaxed; /* Tamaño normal, espaciado cómodo entre líneas */
+    @apply text-base leading-relaxed;
   }
 }
 
-/* Componentes personalizados reutilizables */
+/* =============================================
+   COMPONENTES REUTILIZABLES
+   ============================================= */
 @layer components {
-  /* Estilo para botones primarios (azul marino) */
+  /* Botón principal con gradiente tropical */
   .btn-primary {
-    @apply bg-navy text-white px-6 py-3 rounded-lg font-semibold 
-           hover:bg-navy-light transition-colors duration-200 
-           disabled:opacity-50 disabled:cursor-not-allowed;
-    /* Explicación:
-       - bg-navy: fondo azul marino
-       - px-6 py-3: padding horizontal y vertical
-       - rounded-lg: bordes redondeados
-       - hover:bg-navy-light: cambia color al pasar el mouse
-       - transition-colors: animación suave del cambio de color
-       - disabled: estilos cuando el botón está deshabilitado
-    */
+    @apply bg-ocean text-white px-6 py-3 rounded-xl font-semibold
+           hover:bg-ocean-600 transition-all duration-300
+           disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-lg hover:shadow-xl hover:-translate-y-0.5;
   }
 
-  /* Estilo para botones secundarios (transparente con borde) */
+  /* Botón secundario transparente */
   .btn-secondary {
-    @apply border-2 border-navy text-navy px-6 py-3 rounded-lg font-semibold 
-           hover:bg-navy hover:text-white transition-all duration-200;
+    @apply border-2 border-navy text-navy px-6 py-3 rounded-xl font-semibold
+           hover:bg-navy hover:text-white transition-all duration-300;
   }
 
-  /* Estilo para tarjetas (cards) */
+  /* Botón blanco (para fondos oscuros) */
+  .btn-white {
+    @apply bg-white text-navy px-6 py-3 rounded-xl font-semibold
+           hover:bg-ice transition-all duration-300
+           shadow-lg hover:shadow-xl hover:-translate-y-0.5;
+  }
+
+  /* Botón dorado de llamada a la acción */
+  .btn-gold {
+    @apply bg-maritime-gold text-navy px-8 py-4 rounded-xl font-bold text-lg
+           hover:bg-yellow-400 transition-all duration-300
+           shadow-lg hover:shadow-xl hover:-translate-y-0.5;
+  }
+
+  /* Tarjeta con efecto hover elevado */
   .card {
-    @apply bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200;
-    /* Explicación:
-       - bg-white: fondo blanco
-       - rounded-xl: bordes muy redondeados
-       - shadow-lg: sombra grande
-       - hover:shadow-xl: sombra aún mayor al pasar el mouse
-       - transition-shadow: animación suave de la sombra
-    */
+    @apply bg-white rounded-2xl shadow-md p-6
+           hover:shadow-xl transition-all duration-300
+           border border-gray-100;
   }
 
-  /* Estilo para inputs de formulario */
+  /* Tarjeta con borde colorido al hover */
+  .card-hover {
+    @apply bg-white rounded-2xl shadow-md p-6
+           hover:shadow-xl transition-all duration-300
+           border-2 border-transparent hover:border-ocean/30;
+  }
+
+  /* Tarjeta de vidrio esmerilado (glass effect) */
+  .card-glass {
+    @apply bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6
+           border border-white/20;
+  }
+
+  /* Input de formulario */
   .input-field {
-    @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg 
-           focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/20 
-           transition-all duration-200;
-    /* Explicación:
-       - focus:border-navy: borde azul al hacer clic
-       - focus:outline-none: quitar borde por defecto del navegador
-       - focus:ring-2: anillo de enfoque para accesibilidad
-    */
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl
+           focus:border-ocean focus:outline-none focus:ring-2 focus:ring-ocean/20
+           transition-all duration-200 bg-white;
   }
 
-  /* Estilo para labels de formulario */
+  /* Label de formulario */
   .input-label {
     @apply block text-sm font-semibold text-gray-700 mb-2;
   }
 
-  /* Contenedor con ancho máximo centrado */
+  /* Contenedor centrado */
   .container-custom {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-    /* Explicación:
-       - max-w-7xl: ancho máximo de 80rem (1280px)
-       - mx-auto: centrar horizontalmente
-       - px-4/6/8: padding horizontal responsive (cambia según tamaño de pantalla)
-    */
   }
 
-  /* Estilo para secciones de la página */
+  /* Sección con padding vertical */
   .section {
     @apply py-16 sm:py-20 lg:py-24;
-    /* Padding vertical que aumenta en pantallas más grandes */
+  }
+
+  /* Badge/Insignia */
+  .badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full
+           text-sm font-semibold;
+  }
+
+  .badge-ocean {
+    @apply badge bg-ocean-50 text-ocean-700;
+  }
+
+  .badge-gold {
+    @apply badge bg-sand-light text-maritime-gold;
   }
 }
 
-/* Utilidades personalizadas */
+/* =============================================
+   UTILIDADES PERSONALIZADAS
+   ============================================= */
 @layer utilities {
-  /* Efecto de onda náutica */
-  .wave-effect {
-    background: linear-gradient(135deg, #002855 0%, #003d82 100%);
-    /* Gradiente diagonal de azul marino a azul más claro */
+  /* Gradientes tropicales */
+  .bg-tropical {
+    background: linear-gradient(135deg, #002855 0%, #003d82 40%, #00838F 100%);
   }
 
-  /* Animación de entrada desde abajo */
-  .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
+  .bg-ocean-wave {
+    background: linear-gradient(135deg, #002855 0%, #006064 50%, #00ACC1 100%);
   }
 
-  /* Animación de pulso para elementos importantes */
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .bg-sunset {
+    background: linear-gradient(135deg, #FF7043 0%, #FFB74D 50%, #FFD700 100%);
+  }
+
+  /* Overlay para imágenes hero */
+  .hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 40, 85, 0.75) 0%,
+      rgba(0, 96, 100, 0.5) 40%,
+      rgba(0, 40, 85, 0.85) 100%
+    );
+  }
+
+  /* Decoración ondulada tipo ola */
+  .wave-divider {
+    position: relative;
+  }
+
+  .wave-divider::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='%23ffffff' d='M0,30 C360,60 720,0 1080,30 C1260,45 1380,40 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E") no-repeat center;
+    background-size: cover;
+  }
+
+  /* Efecto de texto con gradiente */
+  .text-gradient {
+    background: linear-gradient(135deg, #FFD700, #FF7043);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-ocean {
+    background: linear-gradient(135deg, #4DD0E1, #00ACC1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
-/* Definición de animaciones personalizadas */
-@keyframes slideUp {
-  from {
-    opacity: 0; /* Empieza invisible */
-    transform: translateY(30px); /* Empieza 30px más abajo */
-  }
-  to {
-    opacity: 1; /* Termina visible */
-    transform: translateY(0); /* Termina en su posición normal */
-  }
+/* =============================================
+   PROTECCIÓN ANTI-COPIA PARA EL EXAMEN
+   Impide seleccionar texto y copiar contenido
+   durante el examen. Es una barrera disuasiva.
+   ============================================= */
+.exam-protegido {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1; /* Completamente visible */
-  }
-  50% {
-    opacity: 0.8; /* Ligeramente transparente */
-  }
-}
-
-/* Estilos para scrollbar personalizado (solo navegadores WebKit como Chrome/Safari) */
+/* =============================================
+   SCROLLBAR PERSONALIZADO
+   ============================================= */
 ::-webkit-scrollbar {
-  width: 10px; /* Ancho de la barra de scroll */
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-ice; /* Fondo de la pista del scroll */
+  @apply bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-navy rounded-full; /* Color y forma del thumb del scroll */
+  @apply bg-ocean rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-navy-light; /* Color más claro al pasar el mouse */
+  @apply bg-ocean-600;
 }
 
-/* Estilos para impresión (cuando se imprime la página) */
+/* =============================================
+   ESTILOS DE IMPRESIÓN
+   ============================================= */
 @media print {
-  /* Ocultar elementos que no se deben imprimir */
   nav,
+  footer,
   .no-print {
-    display: none;
+    display: none !important;
   }
 
-  /* Fondo blanco para ahorrar tinta */
   body {
     @apply bg-white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-certificate {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+    background: white !important;
+    box-shadow: none !important;
+    z-index: 9999;
+  }
+
+  button,
+  .btn-primary,
+  .btn-secondary {
+    display: none !important;
+  }
+
+  .print-certificate * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

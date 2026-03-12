@@ -1,144 +1,136 @@
 /**
  * COMPONENTE DE NAVEGACIÓN (NAVBAR)
- * 
- * Este componente muestra la barra de navegación superior en todas las páginas.
- * Incluye:
- * - Logo de BPS
- * - Links de navegación
- * - Menú hamburguesa para móviles
+ *
+ * Barra de navegación moderna con efecto de transparencia.
+ * En la parte superior es transparente y al hacer scroll se vuelve sólida.
+ * Incluye menú hamburguesa para celulares.
  */
 
-'use client'; // Necesario porque usa interactividad (useState, onClick)
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
-import { Menu, X, Anchor } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Navbar() {
-  /**
-   * Estado para controlar si el menú móvil está abierto o cerrado
-   * - true: menú abierto
-   * - false: menú cerrado
-   */
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Detectar si el usuario hizo scroll (para cambiar el fondo del navbar)
+  const [scrolled, setScrolled] = useState(false);
 
-  /**
-   * Función para alternar el estado del menú móvil
-   * Si está abierto, lo cierra. Si está cerrado, lo abre.
-   */
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  /**
-   * Array con los links de navegación
-   * Cada objeto contiene el texto a mostrar y la ruta (href)
-   */
   const navLinks = [
     { href: '/', label: 'Inicio' },
+    { href: '/somos', label: 'Somos' },
     { href: '/matricula', label: 'Matrícula' },
-    { href: '/examen', label: 'Examen' },
+    { href: '/practica', label: 'Práctica' },
+    { href: '/examen', label: 'Examen Oficial' },
+    { href: '/admin', label: 'Admin' },
   ];
 
   return (
-    <nav className="bg-navy text-white shadow-lg sticky top-0 z-50">
-      {/* 
-        sticky top-0: La navbar se queda fija arriba al hacer scroll
-        z-50: Nivel alto de z-index para que quede sobre otros elementos
-      */}
-      
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-navy shadow-lg'
+          : 'bg-navy/90 backdrop-blur-md'
+      }`}
+    >
       <div className="container-custom">
         <div className="flex items-center justify-between h-20">
-          {/* 
-            ==================
-            LOGO Y NOMBRE
-            ==================
-          */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            {/* Icono de ancla como logo alternativo */}
-            <div className="w-10 h-10 bg-maritime-gold rounded-full flex items-center justify-center">
-              <Anchor className="w-6 h-6 text-navy" />
+          {/* Logo y nombre */}
+          <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+            <div className="w-16 h-16 relative flex-shrink-0">
+              <Image
+                src="/images/bps-logo.png"
+                alt="BPS Logo"
+                fill
+                className="object-contain rounded-full"
+                sizes="64px"
+              />
             </div>
-            
-            {/* Nombre del club */}
             <div className="flex flex-col">
-              <span className="font-bold text-lg leading-tight">Americas Boating Club</span>
-              <span className="text-sm text-ice leading-tight">Boqueron Power Squadron</span>
+              <span className="font-bold text-lg leading-tight text-white">
+                Americas Boating Club
+              </span>
+              <span className="text-sm leading-tight text-ocean-200">
+                Boquerón Power Squadron
+              </span>
             </div>
           </Link>
 
-          {/* 
-            ==================
-            LINKS DE NAVEGACIÓN (Pantallas grandes)
-            ==================
-          */}
-          <div className="hidden md:flex items-center gap-8">
-            {/* 
-              hidden md:flex: 
-              - Oculto en móviles (hidden)
-              - Visible como flex en pantallas medianas y mayores (md:flex)
-            */}
+          {/* Links de navegación (pantallas grandes) */}
+          <div className="hidden lg:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-white font-semibold hover:text-maritime-gold transition-colors duration-200 relative group"
+                className="text-white/90 font-medium hover:text-maritime-gold transition-colors duration-200 text-sm uppercase tracking-wide"
               >
                 {link.label}
-                {/* Línea animada que aparece al hacer hover */}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-maritime-gold group-hover:w-full transition-all duration-200" />
               </Link>
             ))}
+            <Link
+              href="/matricula"
+              className="ml-2 bg-maritime-gold text-navy px-5 py-2.5 rounded-xl font-bold text-sm
+                         hover:bg-yellow-400 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              Inscríbete
+            </Link>
           </div>
 
-          {/* 
-            ==================
-            BOTÓN DE MENÚ HAMBURGUESA (Pantallas pequeñas)
-            ==================
-          */}
+          {/* Botón hamburguesa (móviles) */}
           <button
-            onClick={toggleMenu}
-            className="md:hidden p-2 hover:bg-navy-light rounded-lg transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
             aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
           >
-            {/* 
-              Muestra el icono X si el menú está abierto,
-              o el icono de menú (hamburguesa) si está cerrado
-            */}
-            {isMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* 
-          ==================
-          MENÚ MÓVIL (Solo visible en pantallas pequeñas)
-          ==================
-        */}
-        {isMenuOpen && (
-          <div className="md:hidden pb-6 animate-slide-up">
-            {/* 
-              md:hidden: Solo visible en pantallas pequeñas
-              animate-slide-up: Animación de entrada desde abajo
-            */}
-            <div className="flex flex-col gap-4">
-              {navLinks.map((link) => (
+        {/* Menú móvil con animación */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="lg:hidden overflow-hidden"
+            >
+              <div className="pb-6 pt-2 flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-white font-medium hover:text-maritime-gold hover:bg-white/10
+                               px-4 py-3 rounded-xl transition-all duration-200"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMenuOpen(false)} // Cierra el menú al hacer clic en un link
-                  className="text-white font-semibold hover:text-maritime-gold hover:bg-navy-light px-4 py-3 rounded-lg transition-all duration-200"
+                  href="/matricula"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="mt-2 bg-maritime-gold text-navy px-4 py-3 rounded-xl font-bold
+                             text-center hover:bg-yellow-400 transition-all duration-300"
                 >
-                  {link.label}
+                  Inscríbete Ahora
                 </Link>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );

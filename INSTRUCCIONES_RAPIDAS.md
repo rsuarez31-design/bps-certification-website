@@ -1,22 +1,40 @@
-# 🚀 INSTRUCCIONES RÁPIDAS - BPS Website
-
-## ¿Primera vez con Node.js?
-
-### PASO 1: Instalar Node.js
-1. Ve a [https://nodejs.org/](https://nodejs.org/)
-2. Descarga la versión LTS (la recomendada)
-3. Abre el archivo descargado y sigue el instalador
-4. Cuando termine, abre Terminal y verifica:
-   ```bash
-   node --version
-   ```
-   Deberías ver algo como: `v20.11.0`
+# INSTRUCCIONES RAPIDAS - BPS Website
 
 ---
 
-## PASO 2: Ejecutar el Proyecto
+## Primera vez? Sigue estos pasos
 
-### Opción A: Usando Terminal (Recomendado)
+### PASO 1: Instalar Node.js (si no lo tienes)
+1. Ve a https://nodejs.org/
+2. Descarga la version LTS (la recomendada)
+3. Abre el archivo descargado y sigue el instalador
+4. Verifica en Terminal:
+   ```bash
+   node --version
+   ```
+
+---
+
+### PASO 2: Configurar servicios externos
+
+#### Supabase (base de datos)
+1. Crea cuenta gratuita en https://supabase.com
+2. Crea un proyecto nuevo
+3. En "SQL Editor", ejecuta `supabase/schema.sql`
+4. Luego ejecuta `supabase/seed-questions.sql`
+5. Copia tus claves de Settings > API
+
+#### Stripe (pagos)
+1. Crea cuenta en https://stripe.com
+2. Copia la clave secreta de Developers > API Keys
+
+#### Archivo .env.local
+1. Copia `.env.local.example` y renombralo a `.env.local`
+2. Llena los valores con tus claves de Supabase y Stripe
+
+---
+
+### PASO 3: Ejecutar el Proyecto
 
 1. **Abrir Terminal:**
    - Presiona `Cmd + Espacio`
@@ -31,7 +49,6 @@
    ```bash
    npm install
    ```
-   ⏱️ Esto puede tardar 2-3 minutos. ¡Es normal!
 
 4. **Iniciar el servidor:**
    ```bash
@@ -39,70 +56,83 @@
    ```
 
 5. **Abrir en el navegador:**
-   - Abre tu navegador
    - Ve a: `http://localhost:3000`
 
 ---
 
-## PASO 3: Explorar el Sitio
+## Paginas Disponibles
 
-### Páginas Disponibles:
-- **Inicio:** `http://localhost:3000`
-- **Matrícula:** `http://localhost:3000/matricula`
-- **Examen:** `http://localhost:3000/examen`
-- **Admin:** `http://localhost:3000/admin` (Usuario: BPS, Contraseña: 2026)
+| Pagina | URL | Descripcion |
+|--------|-----|-------------|
+| Inicio | `http://localhost:3000` | Pagina principal con info de Ley 430 |
+| Matricula | `http://localhost:3000/matricula` | Formulario + pago Stripe |
+| Practica | `http://localhost:3000/practica` | Examen de practica (10 preguntas) |
+| Examen Oficial | `http://localhost:3000/examen` | Examen de 75 preguntas |
+| Admin | `http://localhost:3000/admin` | Panel administrativo (BPS/2026) |
 
 ---
 
-## ❓ ¿Problemas?
+## Problemas Comunes
 
 ### "npm: command not found"
-→ Node.js no está instalado. Vuelve al PASO 1.
+Node.js no esta instalado. Ve a https://nodejs.org/
+
+### "supabaseUrl is required"
+Falta `.env.local`. Copia `.env.local.example` a `.env.local` y llena los valores.
 
 ### "Port 3000 is already in use"
-→ Ya tienes algo corriendo en ese puerto. Ciérralo o usa:
 ```bash
 npm run dev -- --port 3001
 ```
 
 ### "Permission denied"
-→ Intenta con:
 ```bash
 sudo npm install
 ```
-(Te pedirá tu contraseña de Mac)
 
 ---
 
-## 🛑 Detener el Servidor
+## Detener el Servidor
 
-En la Terminal donde está corriendo, presiona:
+En la Terminal donde esta corriendo, presiona:
 ```
 Ctrl + C
 ```
 
 ---
 
-## 📝 Archivos Importantes
+## Archivos Importantes
 
-- `app/page.tsx` - Página principal
-- `data/examQuestions.ts` - Las 85 preguntas del examen
-- `app/matricula/page.tsx` - Formulario de inscripción
-- `app/examen/page.tsx` - Sistema de examen
-- `app/admin/page.tsx` - Panel administrativo
-
----
-
-## 💡 Próximos Pasos
-
-1. ✅ Ejecutar el proyecto
-2. ✅ Explorar todas las páginas
-3. ✅ Tomar el examen de práctica
-4. ✅ Ver el panel administrativo
-5. ✅ Personalizar textos y colores según necesites
+| Archivo | Que hace |
+|---------|----------|
+| `app/page.tsx` | Pagina principal |
+| `app/matricula/page.tsx` | Formulario de matricula + pago |
+| `app/practica/page.tsx` | Examen de practica |
+| `app/examen/page.tsx` | Examen oficial |
+| `app/admin/page.tsx` | Panel administrativo |
+| `data/examQuestions.ts` | Las 85 preguntas del examen |
+| `.env.local` | Claves secretas (Supabase, Stripe) |
+| `supabase/schema.sql` | Estructura de la base de datos |
 
 ---
 
-**¿Necesitas ayuda?** Lee el archivo `README.md` completo para más detalles.
+## Webhook de Stripe (para desarrollo local)
 
-**¡Éxito con tu proyecto! ⚓🌊**
+Para que los pagos funcionen en desarrollo local, necesitas el CLI de Stripe:
+
+```bash
+# Instalar Stripe CLI (con Homebrew)
+brew install stripe/stripe-cli/stripe
+
+# Iniciar sesion
+stripe login
+
+# Redirigir webhooks a tu servidor local
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+Copia el secreto del webhook (empieza con `whsec_`) y ponlo en `.env.local`.
+
+---
+
+**Necesitas mas informacion?** Lee `README.md` para documentacion completa.

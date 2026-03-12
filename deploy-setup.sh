@@ -1,95 +1,98 @@
 #!/bin/bash
 
 # ========================================
-# BPS Website - Quick Deployment Setup
+# BPS Website - Configuración de Deployment
+#
+# Este script te ayuda a preparar el proyecto
+# para subirlo a GitHub y desplegarlo en Vercel.
 # ========================================
 
-echo "🚀 BPS Website - Deployment Setup"
-echo "===================================="
+echo "🚀 BPS Website - Preparación para Deployment"
+echo "=============================================="
 echo ""
 
-# Check if Git is installed
+# Verificar que Git esté instalado
 if ! command -v git &> /dev/null
 then
-    echo "❌ Git is not installed."
-    echo "Please install Git first:"
-    echo "  - macOS: Git should be pre-installed, or run: brew install git"
-    echo "  - Windows: Download from https://git-scm.com/"
+    echo "❌ Git no está instalado."
+    echo "Instálalo primero:"
+    echo "  - macOS: Debería venir pre-instalado, o ejecuta: brew install git"
+    echo "  - Windows: Descárgalo de https://git-scm.com/"
     echo ""
     exit 1
 fi
 
-echo "✅ Git is installed: $(git --version)"
+echo "✅ Git instalado: $(git --version)"
 echo ""
 
-# Check if we're in the right directory
+# Verificar que estemos en el directorio correcto
 if [ ! -f "package.json" ]; then
-    echo "❌ Error: package.json not found"
-    echo "Please run this script from the bps-website directory:"
+    echo "❌ Error: No se encontró package.json"
+    echo "Ejecuta este script desde el directorio bps-website:"
     echo "  cd /Users/ramonsuarez/Desktop/BPS/bps-website"
     echo "  bash deploy-setup.sh"
     echo ""
     exit 1
 fi
 
-echo "✅ In correct directory"
+echo "✅ Directorio correcto"
 echo ""
 
-# Check if Git is already initialized
+# Verificar si Git ya está inicializado
 if [ -d ".git" ]; then
-    echo "✅ Git already initialized"
+    echo "✅ Git ya está inicializado"
 else
-    echo "📦 Initializing Git..."
+    echo "📦 Inicializando Git..."
     git init
-    echo "✅ Git initialized"
+    echo "✅ Git inicializado"
 fi
 echo ""
 
-# Check if remote exists
+# Verificar si el remoto está configurado
 if git remote -v | grep -q "origin"; then
-    echo "✅ Git remote already configured:"
+    echo "✅ Remoto de Git ya configurado:"
     git remote -v
 else
-    echo "⚠️  Git remote not configured yet"
+    echo "⚠️  Remoto de Git no configurado todavía"
     echo ""
-    echo "Next steps:"
-    echo "1. Create a repository on GitHub: https://github.com/new"
-    echo "2. Run these commands (replace YOUR-USERNAME with your GitHub username):"
+    echo "Próximos pasos:"
+    echo "1. Crea un repositorio en GitHub: https://github.com/new"
+    echo "2. Ejecuta estos comandos (reemplaza TU-USUARIO con tu usuario de GitHub):"
     echo ""
-    echo "   git remote add origin https://github.com/YOUR-USERNAME/bps-certification-website.git"
+    echo "   git remote add origin https://github.com/TU-USUARIO/bps-certification-website.git"
     echo "   git branch -M main"
     echo "   git add ."
-    echo "   git commit -m \"Initial commit - BPS Website\""
+    echo "   git commit -m \"Commit inicial - BPS Website\""
     echo "   git push -u origin main"
     echo ""
 fi
 
 echo ""
 echo "=========================================="
-echo "📝 NEXT STEPS:"
+echo "📝 PRÓXIMOS PASOS:"
 echo "=========================================="
 echo ""
-echo "1. Create GitHub Account (if you don't have one):"
+echo "1. Crear cuenta de GitHub (si no tienes):"
 echo "   https://github.com"
 echo ""
-echo "2. Create new repository:"
+echo "2. Crear repositorio nuevo:"
 echo "   https://github.com/new"
-echo "   Name: bps-certification-website"
+echo "   Nombre: bps-certification-website"
 echo ""
-echo "3. Push your code to GitHub (commands above)"
+echo "3. Subir tu código a GitHub (comandos arriba)"
 echo ""
-echo "4. Deploy to Vercel:"
+echo "4. Desplegar en Vercel:"
 echo "   https://vercel.com"
-echo "   - Sign up with GitHub"
-echo "   - Import your repository"
-echo "   - Click Deploy"
+echo "   - Regístrate con GitHub"
+echo "   - Importa tu repositorio"
+echo "   - Haz clic en Deploy"
 echo ""
-echo "5. Your site will be live at:"
-echo "   https://your-project.vercel.app"
+echo "5. Tu sitio estará disponible en:"
+echo "   https://tu-proyecto.vercel.app"
 echo ""
 echo "=========================================="
-echo "📖 For detailed instructions, read:"
-echo "   - DEPLOYMENT_GUIDE_ENGLISH.md"
-echo "   - GUIA_DE_DEPLOYMENT.md (Spanish)"
+echo "📖 Para instrucciones detalladas, lee:"
+echo "   - GUIA_DE_DEPLOYMENT.md"
+echo "   - INSTRUCCIONES_RAPIDAS.md"
 echo "=========================================="
 echo ""

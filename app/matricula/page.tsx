@@ -1,34 +1,40 @@
 /**
  * PÁGINA DE MATRÍCULA DIGITAL
- * 
- * Esta página contiene el formulario de inscripción para el curso de navegación.
- * El formulario está organizado en secciones según el documento original:
- * - Información Personal
- * - Características Físicas
- * - Información de la Embarcación
+ *
+ * Formulario de inscripción para el curso de navegación.
+ * Al completar el formulario y pagar, la información se guarda
+ * en Supabase y aparece en el Panel Administrativo.
+ *
+ * Secciones del formulario:
+ * 1. Información del Curso (título dinámico + fecha automática)
+ * 2. Información Personal (con apellido, direcciones duales, upload de ID)
+ * 3. Características Físicas
+ * 4. Información de la Embarcación
+ * 5. Pago con Stripe ($80 + $13 opcional por envío de libro)
  */
 
 'use client';
 
-import { useState } from 'react';
-import { User, Ruler, Ship, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { User, Ruler, Ship, CheckCircle2, AlertCircle, CreditCard, BookOpen, Upload } from 'lucide-react';
+import { supabase } from '@/lib/supabase-client';
 
 /**
- * INTERFAZ PARA LOS DATOS DEL FORMULARIO
- * Define la estructura de todos los campos del formulario
+ * Estructura de todos los campos del formulario.
  */
 interface FormData {
   // Información del curso
   courseName: string;
   courseDate: string;
-  
+
   // Datos personales
   fullName: string;
-  nickname: string;
-  address: string;
+  lastName: string;
+  postalAddress: string;
+  physicalAddress: string;
   city: string;
-  county: string;
-  state: string;
+  country: string;
   zipCode: string;
   phone: string;
   cellphone: string;
@@ -36,39 +42,63 @@ interface FormData {
   gender: string;
   birthDate: string;
   isMinor: string;
-  
+
+  // Campos de firma (solo si es menor de edad)
+  parentGuardianSignature: string;
+  parentGuardianSignedAt: string;
+
   // Características físicas
   hairColor: string;
   eyeColor: string;
   heightFeet: string;
   heightInches: string;
-  
+
   // Información de la embarcación
   boatType: string;
   boatLength: string;
   hasTrailer: string;
   yearsExperience: string;
   motorPower: string;
-  
-  // Información adicional
-  howHeard: string;
-  onlineExamPin: string;
 }
 
+// Formatos de archivo permitidos para el upload de identificación
+const FORMATOS_PERMITIDOS = ['image/jpeg', 'image/png', 'application/pdf'];
+const TAMANO_MAXIMO_MB = 5;
+const TAMANO_MAXIMO_BYTES = TAMANO_MAXIMO_MB * 1024 * 1024;
+
+/**
+ * Componente principal con Suspense (requerido por useSearchParams en Next.js 14)
+ */
 export default function MatriculaPage() {
-  /**
-   * Estado para manejar todos los datos del formulario
-   * Inicialmente todos los campos están vacíos
-   */
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-ice flex items-center justify-center">
+        <p className="text-xl text-gray-600">Cargando formulario...</p>
+      </div>
+    }>
+      <MatriculaContent />
+    </Suspense>
+  );
+}
+
+function MatriculaContent() {
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams.get('success') === 'true';
+  const paymentCanceled = searchParams.get('canceled') === 'true';
+
+  // Fecha de hoy en formato YYYY-MM-DD (para campos automáticos)
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Estado del formulario con valores iniciales
   const [formData, setFormData] = useState<FormData>({
     courseName: '',
-    courseDate: '',
+    courseDate: hoy,
     fullName: '',
-    nickname: '',
-    address: '',
+    lastName: '',
+    postalAddress: '',
+    physicalAddress: '',
     city: '',
-    county: '',
-    state: 'Puerto Rico',
+    country: 'Puerto Rico',
     zipCode: '',
     phone: '',
     cellphone: '',
@@ -76,6 +106,8 @@ export default function MatriculaPage() {
     gender: '',
     birthDate: '',
     isMinor: '',
+    parentGuardianSignature: '',
+    parentGuardianSignedAt: hoy,
     hairColor: '',
     eyeColor: '',
     heightFeet: '',
@@ -85,204 +117,274 @@ export default function MatriculaPage() {
     hasTrailer: '',
     yearsExperience: '',
     motorPower: '',
-    howHeard: '',
-    onlineExamPin: '',
   });
 
-  /**
-   * Estado para controlar si el formulario fue enviado con éxito
-   */
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  /**
-   * Estado para mostrar errores de validación
-   */
   const [errors, setErrors] = useState<string[]>([]);
+  const [wantsBookShipping, setWantsBookShipping] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  /**
-   * FUNCIÓN PARA MANEJAR CAMBIOS EN LOS INPUTS
-   * 
-   * Esta función se ejecuta cada vez que el usuario escribe en un campo.
-   * Actualiza el estado con el nuevo valor.
-   * 
-   * @param e - Evento del input que cambió
-   */
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
+  // Checkbox: "Usar la misma dirección para ambas"
+  const [sameAddress, setSameAddress] = useState(false);
+
+  // Archivo de identificación seleccionado por el usuario
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [idFileError, setIdFileError] = useState('');
+
+  // Cargar el título del curso desde la configuración del admin
+  useEffect(() => {
+    const cargarConfiguracion = async () => {
+      try {
+        const { data } = await supabase
+          .from('site_config')
+          .select('course_month, course_year')
+          .eq('id', 'default')
+          .single();
+
+        if (data) {
+          const titulo = `Curso Básico De Navegación ABC - ${data.course_month} - ${data.course_year}`;
+          setFormData(prev => ({ ...prev, courseName: titulo }));
+        }
+      } catch (err) {
+        console.warn('No se pudo cargar la configuración del curso:', err);
+      }
+    };
+    cargarConfiguracion();
+  }, []);
+
+  // Si el pago fue exitoso (viene de Stripe), mostrar confirmación
+  useEffect(() => {
+    if (paymentSuccess) setIsSubmitted(true);
+  }, [paymentSuccess]);
+
+  // Cuando se activa "misma dirección", copiar postal a física
+  useEffect(() => {
+    if (sameAddress) {
+      setFormData(prev => ({ ...prev, physicalAddress: prev.postalAddress }));
+    }
+  }, [sameAddress, formData.postalAddress]);
+
+  // Manejar cambios en los campos de texto
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev, // Mantiene todos los valores anteriores
-      [name]: value, // Actualiza solo el campo que cambió
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * FUNCIÓN PARA VALIDAR EL FORMULARIO
-   * 
-   * Verifica que los campos obligatorios estén completos.
-   * 
-   * @returns true si el formulario es válido, false si hay errores
-   */
+  // Manejar selección de archivo de identificación
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIdFileError('');
+    const archivo = e.target.files?.[0];
+    if (!archivo) { setIdFile(null); return; }
+
+    if (!FORMATOS_PERMITIDOS.includes(archivo.type)) {
+      setIdFileError('Formato no válido. Solo se aceptan: JPG, PNG o PDF.');
+      setIdFile(null);
+      return;
+    }
+    if (archivo.size > TAMANO_MAXIMO_BYTES) {
+      setIdFileError(`El archivo es muy grande. Máximo ${TAMANO_MAXIMO_MB} MB.`);
+      setIdFile(null);
+      return;
+    }
+    setIdFile(archivo);
+  };
+
+  // Validar todos los campos obligatorios
   const validateForm = (): boolean => {
     const newErrors: string[] = [];
 
-    // Validar campos obligatorios
-    if (!formData.fullName.trim()) newErrors.push('Nombre completo es obligatorio');
+    if (!formData.fullName.trim()) newErrors.push('Nombre es obligatorio');
+    if (!formData.lastName.trim()) newErrors.push('Apellido es obligatorio');
     if (!formData.email.trim()) newErrors.push('Correo electrónico es obligatorio');
     if (!formData.phone.trim()) newErrors.push('Teléfono es obligatorio');
     if (!formData.birthDate) newErrors.push('Fecha de nacimiento es obligatoria');
     if (!formData.gender) newErrors.push('Sexo es obligatorio');
 
-    // Validar email con expresión regular
+    if (formData.isMinor === 'Si') {
+      if (!formData.parentGuardianSignature.trim()) {
+        newErrors.push('Firma de padres o guardián es obligatoria para menores de edad');
+      }
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
-      newErrors.push('Correo electrónico no es válido');
+      newErrors.push('El correo electrónico no tiene un formato válido (ej: nombre@correo.com)');
+    }
+
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (formData.phone && phoneDigits.length < 7) {
+      newErrors.push('El teléfono debe tener al menos 7 dígitos');
+    }
+
+    if (formData.birthDate) {
+      const birthYear = new Date(formData.birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      if (birthYear < 1920 || birthYear > currentYear) {
+        newErrors.push('La fecha de nacimiento no parece correcta');
+      }
     }
 
     setErrors(newErrors);
     return newErrors.length === 0;
   };
 
-  /**
-   * FUNCIÓN PARA MANEJAR EL ENVÍO DEL FORMULARIO
-   * 
-   * @param e - Evento del formulario
-   */
+  // Enviar el formulario: guardar en Supabase, subir archivo, redirigir a Stripe
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Previene el comportamiento por defecto del formulario
-
-    // Validar el formulario
+    e.preventDefault();
     if (!validateForm()) {
-      // Scroll hacia arriba para ver los errores
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // Simular envío de datos
-    // En producción, aquí harías una llamada a tu API
-    console.log('Datos del formulario:', formData);
+    setIsProcessingPayment(true);
+    try {
+      const totalCents = wantsBookShipping ? 9300 : 8000;
 
-    // Guardar en localStorage para demostración
-    const students = JSON.parse(localStorage.getItem('students') || '[]');
-    students.push({
-      ...formData,
-      id: Date.now(),
-      submittedAt: new Date().toISOString(),
-    });
-    localStorage.setItem('students', JSON.stringify(students));
+      // PASO 1: Guardar matrícula con estado "pending"
+      const { data: registration, error: dbError } = await supabase
+        .from('registrations')
+        .insert({
+          course_name: formData.courseName,
+          course_date: formData.courseDate,
+          full_name: formData.fullName,
+          last_name: formData.lastName,
+          postal_address: formData.postalAddress,
+          physical_address: sameAddress ? formData.postalAddress : formData.physicalAddress,
+          city: formData.city,
+          country: formData.country,
+          zip_code: formData.zipCode,
+          phone: formData.phone,
+          cellphone: formData.cellphone,
+          email: formData.email,
+          gender: formData.gender,
+          birth_date: formData.birthDate,
+          is_minor: formData.isMinor === 'Si',
+          parent_guardian_signature: formData.parentGuardianSignature || null,
+          parent_guardian_signed_at: formData.isMinor === 'Si' ? formData.parentGuardianSignedAt : null,
+          hair_color: formData.hairColor,
+          eye_color: formData.eyeColor,
+          height_feet: formData.heightFeet,
+          height_inches: formData.heightInches,
+          boat_type: formData.boatType,
+          boat_length: formData.boatLength,
+          has_trailer: formData.hasTrailer,
+          years_experience: formData.yearsExperience,
+          motor_power: formData.motorPower,
+          wants_book_shipping: wantsBookShipping,
+          amount_total_cents: totalCents,
+          payment_status: 'pending',
+        })
+        .select()
+        .single();
 
-    // Mostrar mensaje de éxito
-    setIsSubmitted(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (dbError || !registration) {
+        throw new Error('No se pudo guardar la matrícula: ' + (dbError?.message || 'Error desconocido'));
+      }
+
+      // PASO 2: Subir archivo de identificación (si se seleccionó uno)
+      if (idFile) {
+        const ext = idFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const nombreArchivo = `${registration.id}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('id-documents')
+          .upload(nombreArchivo, idFile);
+
+        if (!uploadError) {
+          await supabase
+            .from('registrations')
+            .update({ id_document_path: nombreArchivo })
+            .eq('id', registration.id);
+        } else {
+          console.warn('No se pudo subir el archivo de ID:', uploadError.message);
+        }
+      }
+
+      // PASO 3: Crear sesión de pago en Stripe
+      const stripeResponse = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationId: registration.id, wantsBookShipping }),
+      });
+      const stripeData = await stripeResponse.json();
+
+      if (!stripeData.url) throw new Error('No se pudo crear la sesión de pago');
+
+      // PASO 4: Redirigir a Stripe
+      window.location.href = stripeData.url;
+    } catch (error: any) {
+      console.error('Error al procesar matrícula:', error);
+      setErrors([error.message || 'Ocurrió un error al procesar tu matrícula. Por favor intenta de nuevo.']);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
-  /**
-   * SI EL FORMULARIO FUE ENVIADO CON ÉXITO, MOSTRAR MENSAJE
-   */
+  // --- PANTALLA DE CONFIRMACIÓN ---
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-ice py-20">
+      <div className="min-h-screen bg-ice pt-28 pb-20">
         <div className="container-custom max-w-2xl">
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            {/* Icono de éxito */}
             <div className="w-20 h-20 bg-maritime-green/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-12 h-12 text-maritime-green" />
             </div>
-            
-            <h1 className="text-3xl font-bold text-navy mb-4">
-              ¡Matrícula Enviada con Éxito!
-            </h1>
-            
+            <h1 className="text-3xl font-bold text-navy mb-4">¡Matrícula y Pago Completados!</h1>
             <p className="text-lg text-gray-600 mb-8">
-              Hemos recibido tu información. Te contactaremos pronto con los detalles 
-              del curso y la fecha del examen.
+              Tu inscripción ha sido procesada exitosamente. Te contactaremos pronto
+              con los detalles del curso y la fecha del examen.
             </p>
-            
-            <div className="bg-ice rounded-lg p-6 mb-8">
-              <p className="text-gray-700 mb-2">
-                <strong>Nombre:</strong> {formData.fullName}
-              </p>
-              <p className="text-gray-700 mb-2">
-                <strong>Email:</strong> {formData.email}
-              </p>
-              <p className="text-gray-700">
-                <strong>Teléfono:</strong> {formData.phone}
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsSubmitted(false);
-                setFormData({
-                  courseName: '',
-                  courseDate: '',
-                  fullName: '',
-                  nickname: '',
-                  address: '',
-                  city: '',
-                  county: '',
-                  state: 'Puerto Rico',
-                  zipCode: '',
-                  phone: '',
-                  cellphone: '',
-                  email: '',
-                  gender: '',
-                  birthDate: '',
-                  isMinor: '',
-                  hairColor: '',
-                  eyeColor: '',
-                  heightFeet: '',
-                  heightInches: '',
-                  boatType: '',
-                  boatLength: '',
-                  hasTrailer: '',
-                  yearsExperience: '',
-                  motorPower: '',
-                  howHeard: '',
-                  onlineExamPin: '',
-                });
-              }}
-              className="btn-primary"
-            >
-              Enviar Otra Matrícula
-            </button>
+            <a href="/" className="btn-primary inline-block">Volver al Inicio</a>
           </div>
         </div>
       </div>
     );
   }
 
-  /**
-   * RENDERIZAR EL FORMULARIO
-   */
+  // --- PANTALLA DE PAGO CANCELADO ---
+  if (paymentCanceled) {
+    return (
+      <div className="min-h-screen bg-ice pt-28 pb-20">
+        <div className="container-custom max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-20 h-20 bg-maritime-red/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-12 h-12 text-maritime-red" />
+            </div>
+            <h1 className="text-3xl font-bold text-navy mb-4">Pago Cancelado</h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Tu pago fue cancelado. Puedes intentar de nuevo completando el formulario.
+            </p>
+            <a href="/matricula" className="btn-primary inline-block">Intentar de Nuevo</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- FORMULARIO PRINCIPAL ---
   return (
-    <div className="min-h-screen bg-ice py-12">
+    <div className="min-h-screen bg-ice pt-28 pb-12">
       <div className="container-custom max-w-4xl">
-        {/* Encabezado de la página */}
+        {/* Título */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-navy mb-4">
-            Formulario de Matrícula
-          </h1>
-          <p className="text-xl text-gray-600">
-            Completa este formulario para inscribirte en el curso de navegación
-          </p>
+          <span className="inline-flex items-center gap-2 bg-ocean-50 text-ocean-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <CreditCard className="w-4 h-4" />
+            Inscripción al Curso
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-bold text-navy mb-4">Formulario de Matrícula</h1>
+          <p className="text-xl text-gray-600">Completa este formulario para inscribirte en el curso de navegación</p>
         </div>
 
-        {/* Mostrar errores si los hay */}
+        {/* Errores */}
         {errors.length > 0 && (
           <div className="bg-maritime-red/10 border-2 border-maritime-red rounded-lg p-6 mb-8">
             <div className="flex gap-3">
               <AlertCircle className="w-6 h-6 text-maritime-red flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-maritime-red mb-2">
-                  Por favor corrige los siguientes errores:
-                </h3>
+                <h3 className="font-bold text-maritime-red mb-2">Por favor corrige los siguientes errores:</h3>
                 <ul className="list-disc list-inside space-y-1">
                   {errors.map((error, index) => (
-                    <li key={index} className="text-maritime-red">
-                      {error}
-                    </li>
+                    <li key={index} className="text-maritime-red">{error}</li>
                   ))}
                 </ul>
               </div>
@@ -290,14 +392,9 @@ export default function MatriculaPage() {
           </div>
         )}
 
-        {/* FORMULARIO */}
         <form onSubmit={handleSubmit} className="space-y-8">
-          
-          {/* 
-            ==========================================
-            SECCIÓN 1: INFORMACIÓN DEL CURSO
-            ==========================================
-          */}
+
+          {/* ======================== SECCIÓN 1: INFORMACIÓN DEL CURSO ======================== */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center">
@@ -305,44 +402,19 @@ export default function MatriculaPage() {
               </div>
               <h2 className="text-2xl font-bold">Información del Curso</h2>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Título del Curso */}
               <div>
-                <label className="input-label">
-                  Título del Curso
-                </label>
-                <input
-                  type="text"
-                  name="courseName"
-                  value={formData.courseName}
-                  onChange={handleChange}
-                  placeholder="Ej: Curso Básico de Navegación"
-                  className="input-field"
-                />
+                <label className="input-label">Título del Curso</label>
+                <input type="text" name="courseName" value={formData.courseName} readOnly className="input-field bg-gray-100 cursor-not-allowed" />
               </div>
-
-              {/* Fecha */}
               <div>
-                <label className="input-label">
-                  Fecha
-                </label>
-                <input
-                  type="date"
-                  name="courseDate"
-                  value={formData.courseDate}
-                  onChange={handleChange}
-                  className="input-field"
-                />
+                <label className="input-label">Fecha de Matrícula</label>
+                <input type="date" name="courseDate" value={formData.courseDate} readOnly className="input-field bg-gray-100 cursor-not-allowed" />
               </div>
             </div>
           </div>
 
-          {/* 
-            ==========================================
-            SECCIÓN 2: DATOS PERSONALES
-            ==========================================
-          */}
+          {/* ======================== SECCIÓN 2: DATOS PERSONALES ======================== */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center">
@@ -350,207 +422,162 @@ export default function MatriculaPage() {
               </div>
               <h2 className="text-2xl font-bold">Información Personal</h2>
             </div>
-
             <div className="space-y-6">
-              {/* Nombre Completo */}
-              <div>
-                <label className="input-label">
-                  Nombre Completo <span className="text-maritime-red">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  placeholder="Nombre, inicial del segundo nombre y apellidos"
-                  className="input-field"
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Incluye nombre, inicial del segundo nombre y apellidos
-                </p>
+              {/* Nombre y Apellido */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="input-label">Nombre <span className="text-maritime-red">*</span></label>
+                  <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Nombre e inicial del segundo nombre" className="input-field" required />
+                </div>
+                <div>
+                  <label className="input-label">Apellido <span className="text-maritime-red">*</span></label>
+                  <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Apellidos" className="input-field" required />
+                </div>
               </div>
 
-              {/* Apodo */}
+              {/* Dirección Postal */}
               <div>
-                <label className="input-label">
-                  Apodo
+                <label className="input-label">Dirección Postal</label>
+                <input type="text" name="postalAddress" value={formData.postalAddress} onChange={handleChange} placeholder="Calle, número, apartamento, PO Box" className="input-field" />
+              </div>
+
+              {/* Checkbox: misma dirección */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="sameAddress"
+                  checked={sameAddress}
+                  onChange={(e) => {
+                    setSameAddress(e.target.checked);
+                    if (!e.target.checked) setFormData(prev => ({ ...prev, physicalAddress: '' }));
+                  }}
+                  className="w-5 h-5 text-navy rounded border-gray-300 focus:ring-navy"
+                />
+                <label htmlFor="sameAddress" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  Usar la misma dirección para la dirección física
                 </label>
+              </div>
+
+              {/* Dirección Física */}
+              <div>
+                <label className="input-label">Dirección Física</label>
                 <input
                   type="text"
-                  name="nickname"
-                  value={formData.nickname}
+                  name="physicalAddress"
+                  value={sameAddress ? formData.postalAddress : formData.physicalAddress}
                   onChange={handleChange}
-                  placeholder="Nombre por el que te conocen"
-                  className="input-field"
+                  placeholder="Calle, número, urbanización"
+                  className={`input-field ${sameAddress ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  readOnly={sameAddress}
                 />
               </div>
 
-              {/* Dirección */}
-              <div>
-                <label className="input-label">
-                  Dirección <span className="text-maritime-red">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Calle, número, apartamento"
-                  className="input-field"
-                />
-              </div>
-
-              {/* Ciudad, Condado, Estado, Código Postal */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Ciudad, País, Código Postal */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="input-label">Ciudad</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="San Juan"
-                    className="input-field"
-                  />
+                  <label className="input-label">Ciudad / Pueblo</label>
+                  <input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="San Juan" className="input-field" />
                 </div>
-
                 <div>
-                  <label className="input-label">Condado</label>
-                  <input
-                    type="text"
-                    name="county"
-                    value={formData.county}
-                    onChange={handleChange}
-                    placeholder="Cabo Rojo"
-                    className="input-field"
-                  />
+                  <label className="input-label">País</label>
+                  <input type="text" name="country" value={formData.country} onChange={handleChange} className="input-field" />
                 </div>
-
-                <div>
-                  <label className="input-label">Estado</label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    className="input-field"
-                  />
-                </div>
-
                 <div>
                   <label className="input-label">Código Postal</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    placeholder="00624"
-                    className="input-field"
-                  />
+                  <input type="text" name="zipCode" value={formData.zipCode} onChange={handleChange} placeholder="00624" className="input-field" />
                 </div>
               </div>
 
               {/* Teléfonos y Email */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="input-label">
-                    Teléfono <span className="text-maritime-red">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="(787) 123-4567"
-                    className="input-field"
-                    required
-                  />
+                  <label className="input-label">Teléfono <span className="text-maritime-red">*</span></label>
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="(787) 123-4567" className="input-field" required />
                 </div>
-
                 <div>
                   <label className="input-label">Celular</label>
-                  <input
-                    type="tel"
-                    name="cellphone"
-                    value={formData.cellphone}
-                    onChange={handleChange}
-                    placeholder="(787) 987-6543"
-                    className="input-field"
-                  />
+                  <input type="tel" name="cellphone" value={formData.cellphone} onChange={handleChange} placeholder="(787) 987-6543" className="input-field" />
                 </div>
-
                 <div>
-                  <label className="input-label">
-                    Email <span className="text-maritime-red">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="tu@email.com"
-                    className="input-field"
-                    required
-                  />
+                  <label className="input-label">Email <span className="text-maritime-red">*</span></label>
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="tu@email.com" className="input-field" required />
                 </div>
               </div>
 
               {/* Sexo, Fecha de Nacimiento, Menor de 18 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="input-label">
-                    Sexo <span className="text-maritime-red">*</span>
-                  </label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="input-field"
-                    required
-                  >
+                  <label className="input-label">Sexo <span className="text-maritime-red">*</span></label>
+                  <select name="gender" value={formData.gender} onChange={handleChange} className="input-field" required>
                     <option value="">Selecciona...</option>
                     <option value="M">Masculino (M)</option>
                     <option value="F">Femenino (F)</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="input-label">
-                    Fecha de Nacimiento <span className="text-maritime-red">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="birthDate"
-                    value={formData.birthDate}
-                    onChange={handleChange}
-                    className="input-field"
-                    required
-                  />
+                  <label className="input-label">Fecha de Nacimiento <span className="text-maritime-red">*</span></label>
+                  <input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="input-field" required />
                 </div>
-
                 <div>
                   <label className="input-label">¿Menor de 18 años?</label>
-                  <select
-                    name="isMinor"
-                    value={formData.isMinor}
-                    onChange={handleChange}
-                    className="input-field"
-                  >
+                  <select name="isMinor" value={formData.isMinor} onChange={handleChange} className="input-field">
                     <option value="">Selecciona...</option>
                     <option value="Si">Sí</option>
                     <option value="No">No</option>
                   </select>
                 </div>
               </div>
+
+              {/* Campos de firma de padre/tutor (solo si es menor) */}
+              {formData.isMinor === 'Si' && (
+                <div className="bg-maritime-gold/10 border-2 border-maritime-gold rounded-lg p-6">
+                  <h3 className="font-bold text-lg mb-4">Autorización de Padre/Madre o Guardián</h3>
+                  <p className="text-gray-600 mb-4">
+                    Como el estudiante es menor de 18 años, se requiere la firma de un padre, madre o guardián legal.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="input-label">Firma de Padres o Guardián <span className="text-maritime-red">*</span></label>
+                      <input type="text" name="parentGuardianSignature" value={formData.parentGuardianSignature} onChange={handleChange} placeholder="Nombre completo del padre/madre/guardián" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="input-label">Fecha de Firma <span className="text-maritime-red">*</span></label>
+                      <input type="date" name="parentGuardianSignedAt" value={formData.parentGuardianSignedAt} readOnly className="input-field bg-gray-100 cursor-not-allowed" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload de Identificación Oficial */}
+              <div className="bg-ice rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Upload className="w-5 h-5 text-navy" />
+                  <h3 className="font-bold text-lg">Identificación Oficial</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Sube una foto o PDF de tu identificación oficial (Licencia, Real ID, Pasaporte).
+                  Formatos aceptados: JPG, PNG, PDF. Tamaño máximo: {TAMANO_MAXIMO_MB} MB.
+                </p>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+                             file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                             file:bg-navy/10 file:text-navy hover:file:bg-navy/20
+                             cursor-pointer"
+                />
+                {idFileError && <p className="text-maritime-red text-sm mt-2">{idFileError}</p>}
+                {idFile && !idFileError && (
+                  <p className="text-maritime-green text-sm mt-2">
+                    Archivo seleccionado: {idFile.name} ({(idFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* 
-            ==========================================
-            SECCIÓN 3: DESCRIPCIÓN FÍSICA
-            ==========================================
-          */}
+          {/* ======================== SECCIÓN 3: CARACTERÍSTICAS FÍSICAS ======================== */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center">
@@ -558,75 +585,28 @@ export default function MatriculaPage() {
               </div>
               <h2 className="text-2xl font-bold">Características Físicas</h2>
             </div>
-
-            <p className="text-gray-600 mb-6">
-              Requerida para certificación estatal
-            </p>
-
+            <p className="text-gray-600 mb-6">Requerida para certificación estatal</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Color de Cabello */}
               <div>
                 <label className="input-label">Color de Cabello</label>
-                <input
-                  type="text"
-                  name="hairColor"
-                  value={formData.hairColor}
-                  onChange={handleChange}
-                  placeholder="Negro"
-                  className="input-field"
-                />
+                <input type="text" name="hairColor" value={formData.hairColor} onChange={handleChange} placeholder="Negro" className="input-field" />
               </div>
-
-              {/* Color de Ojos */}
               <div>
                 <label className="input-label">Color de Ojos</label>
-                <input
-                  type="text"
-                  name="eyeColor"
-                  value={formData.eyeColor}
-                  onChange={handleChange}
-                  placeholder="Marrón"
-                  className="input-field"
-                />
+                <input type="text" name="eyeColor" value={formData.eyeColor} onChange={handleChange} placeholder="Marrón" className="input-field" />
               </div>
-
-              {/* Estatura - Pies */}
               <div>
                 <label className="input-label">Estatura (Pies)</label>
-                <input
-                  type="number"
-                  name="heightFeet"
-                  value={formData.heightFeet}
-                  onChange={handleChange}
-                  placeholder="5"
-                  min="3"
-                  max="8"
-                  className="input-field"
-                />
+                <input type="number" name="heightFeet" value={formData.heightFeet} onChange={handleChange} placeholder="5" min="3" max="8" className="input-field" />
               </div>
-
-              {/* Estatura - Pulgadas */}
               <div>
                 <label className="input-label">Estatura (Pulgadas)</label>
-                <input
-                  type="number"
-                  name="heightInches"
-                  value={formData.heightInches}
-                  onChange={handleChange}
-                  placeholder="10"
-                  min="0"
-                  max="11"
-                  className="input-field"
-                />
+                <input type="number" name="heightInches" value={formData.heightInches} onChange={handleChange} placeholder="10" min="0" max="11" className="input-field" />
               </div>
             </div>
           </div>
 
-          {/* 
-            ==========================================
-            SECCIÓN 4: INFORMACIÓN DE LA EMBARCACIÓN
-            ==========================================
-          */}
+          {/* ======================== SECCIÓN 4: INFORMACIÓN DE LA EMBARCACIÓN ======================== */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center">
@@ -634,17 +614,10 @@ export default function MatriculaPage() {
               </div>
               <h2 className="text-2xl font-bold">Información de la Embarcación</h2>
             </div>
-
             <div className="space-y-6">
-              {/* Tipo de Bote */}
               <div>
                 <label className="input-label">Tipo de Bote</label>
-                <select
-                  name="boatType"
-                  value={formData.boatType}
-                  onChange={handleChange}
-                  className="input-field"
-                >
+                <select name="boatType" value={formData.boatType} onChange={handleChange} className="input-field">
                   <option value="">Selecciona...</option>
                   <option value="Ninguno">Ninguno</option>
                   <option value="Outboard">Fuera de Borda (Outboard)</option>
@@ -655,17 +628,10 @@ export default function MatriculaPage() {
                   <option value="Paddle">Remo/Paleta (Paddle)</option>
                 </select>
               </div>
-
-              {/* Eslora y Remolque */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="input-label">Eslora (Largo)</label>
-                  <select
-                    name="boatLength"
-                    value={formData.boatLength}
-                    onChange={handleChange}
-                    className="input-field"
-                  >
+                  <select name="boatLength" value={formData.boatLength} onChange={handleChange} className="input-field">
                     <option value="">Selecciona...</option>
                     <option value="Menos de 16'">&lt; 16 pies</option>
                     <option value="16-25'">16-25 pies</option>
@@ -674,113 +640,85 @@ export default function MatriculaPage() {
                     <option value="55'+">55+ pies</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="input-label">¿Tiene Remolque (Trailer)?</label>
-                  <select
-                    name="hasTrailer"
-                    value={formData.hasTrailer}
-                    onChange={handleChange}
-                    className="input-field"
-                  >
+                  <select name="hasTrailer" value={formData.hasTrailer} onChange={handleChange} className="input-field">
                     <option value="">Selecciona...</option>
                     <option value="Si">Sí</option>
                     <option value="No">No</option>
                   </select>
                 </div>
               </div>
-
-              {/* Años de Experiencia y Potencia del Motor */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="input-label">Años de Experiencia Navegando</label>
-                  <input
-                    type="number"
-                    name="yearsExperience"
-                    value={formData.yearsExperience}
-                    onChange={handleChange}
-                    placeholder="5"
-                    min="0"
-                    className="input-field"
-                  />
+                  <input type="number" name="yearsExperience" value={formData.yearsExperience} onChange={handleChange} placeholder="5" min="0" className="input-field" />
                 </div>
-
                 <div>
                   <label className="input-label">Potencia del Motor (HP)</label>
-                  <input
-                    type="number"
-                    name="motorPower"
-                    value={formData.motorPower}
-                    onChange={handleChange}
-                    placeholder="150"
-                    min="0"
-                    className="input-field"
-                  />
+                  <input type="number" name="motorPower" value={formData.motorPower} onChange={handleChange} placeholder="150" min="0" className="input-field" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 
-            ==========================================
-            SECCIÓN 5: INFORMACIÓN ADICIONAL
-            ==========================================
-          */}
+          {/* ======================== SECCIÓN 5: PAGO CON STRIPE ======================== */}
           <div className="card">
-            <h2 className="text-2xl font-bold mb-6">Información Adicional</h2>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-navy/10 rounded-lg flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-navy" />
+              </div>
+              <h2 className="text-2xl font-bold">Pago del Curso</h2>
+            </div>
 
-            <div className="space-y-6">
-              {/* ¿Cómo se enteró del curso? */}
-              <div>
-                <label className="input-label">¿Cómo se enteró del curso?</label>
-                <select
-                  name="howHeard"
-                  value={formData.howHeard}
-                  onChange={handleChange}
-                  className="input-field"
-                >
-                  <option value="">Selecciona...</option>
-                  <option value="News">Noticias/Revista</option>
-                  <option value="TV">TV</option>
-                  <option value="Radio">Radio</option>
-                  <option value="Web">Internet/Web</option>
-                  <option value="Booth">Stand/Booth</option>
-                  <option value="Word">Recomendación</option>
-                  <option value="Poster">Póster/Literatura</option>
-                </select>
+            <div className="bg-ice rounded-lg p-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-semibold text-gray-800">Curso de Certificación de Navegación</p>
+                  <p className="text-sm text-gray-600">Incluye examen y certificación</p>
+                </div>
+                <p className="text-2xl font-bold text-navy">$80.00</p>
               </div>
 
-              {/* PIN para examen en línea */}
-              <div>
-                <label className="input-label">
-                  PIN para Examen en Línea
-                </label>
-                <input
-                  type="text"
-                  name="onlineExamPin"
-                  value={formData.onlineExamPin}
-                  onChange={handleChange}
-                  placeholder="Para estudiantes de ABC3 que requieren examen presencial supervisado"
-                  className="input-field"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Solo para estudiantes que requieren examen presencial supervisado
-                </p>
+              <div className="border-t border-gray-300" />
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="bookShipping"
+                    checked={wantsBookShipping}
+                    onChange={(e) => setWantsBookShipping(e.target.checked)}
+                    className="mt-1 w-5 h-5 text-navy rounded border-gray-300 focus:ring-navy"
+                  />
+                  <label htmlFor="bookShipping" className="cursor-pointer">
+                    <p className="font-semibold text-gray-800 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Enviar Libro de Texto por Correo
+                    </p>
+                    <p className="text-sm text-gray-600">Recibirás el libro de navegación en tu dirección postal</p>
+                  </label>
+                </div>
+                <p className="text-xl font-bold text-navy">+$13.00</p>
+              </div>
+
+              <div className="border-t-2 border-navy" />
+
+              <div className="flex justify-between items-center">
+                <p className="text-xl font-bold text-navy">Total a Pagar</p>
+                <p className="text-3xl font-bold text-navy">${wantsBookShipping ? '93.00' : '80.00'}</p>
               </div>
             </div>
+
+            <p className="text-sm text-gray-500 mt-4 text-center">
+              Al hacer clic en el botón, serás redirigido a Stripe para completar tu pago de forma segura.
+            </p>
           </div>
 
-          {/* 
-            ==========================================
-            BOTÓN DE ENVÍO
-            ==========================================
-          */}
+          {/* ======================== BOTÓN DE ENVÍO ======================== */}
           <div className="flex justify-center">
-            <button
-              type="submit"
-              className="btn-primary text-lg px-12 py-4"
-            >
-              Enviar Matrícula
+            <button type="submit" disabled={isProcessingPayment} className="btn-primary text-lg px-12 py-4 disabled:opacity-50">
+              {isProcessingPayment ? 'Procesando...' : `Pagar $${wantsBookShipping ? '93.00' : '80.00'} y Enviar Matrícula`}
             </button>
           </div>
         </form>
