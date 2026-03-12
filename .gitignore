@@ -1,0 +1,30 @@
+# Archivos del sistema operativo Mac
+.DS_Store
+**/.DS_Store
+
+# Variables de entorno (contienen contraseñas y claves secretas)
+.env*.local
+**/.env*.local
+
+# Dependencias (se reinstalan con npm install)
+**/node_modules/
+
+# Archivos generados por Next.js
+**/.next/
+**/out/
+**/build/
+
+# Archivos de Vercel
+**/.vercel
+
+# TypeScript
+*.tsbuildinfo
+**/next-env.d.ts
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos de editor
+.vscode/
+.idea/
