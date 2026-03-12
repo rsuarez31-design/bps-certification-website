@@ -26,28 +26,26 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             {/* Columna 1: Sobre Nosotros */}
             <div className="lg:col-span-1">
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-20 h-20 relative flex-shrink-0">
+              <div className="flex justify-center mb-5">
+                <div className="w-[150px] h-[150px] relative flex-shrink-0">
                   <Image
                     src="/images/bps-logo.png"
                     alt="BPS Logo"
                     fill
                     className="object-contain rounded-full"
-                    sizes="80px"
+                    sizes="150px"
                   />
                 </div>
-                <div>
-                  <span className="font-bold text-xl block leading-tight">Americas Boating Club</span>
-                  <span className="text-base text-ocean-200 leading-tight">Boquerón Power Squadron</span>
-                </div>
               </div>
-              <p className="text-white/70 leading-relaxed mb-5">
+              <p className="text-white/70 leading-relaxed mb-5 text-center">
                 Dedicados a promover la navegación segura y responsable en las aguas
                 de Puerto Rico desde hace más de 50 años.
               </p>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-                <Anchor className="w-4 h-4 text-maritime-gold" />
-                <span className="text-sm font-semibold text-white/90">Certificación Ley 430</span>
+              <div className="flex justify-center">
+                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
+                  <Anchor className="w-4 h-4 text-maritime-gold" />
+                  <span className="text-sm font-semibold text-white/90">Certificación Ley 430</span>
+                </div>
               </div>
             </div>
 

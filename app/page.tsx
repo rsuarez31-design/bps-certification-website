@@ -51,14 +51,17 @@ export default function HomePage() {
 
           <AnimatedSection delay={0.1}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
-              Navega con
+              Americas Boating Club
               <span className="block text-gradient mt-2">
-                Confianza y Seguridad
+                Boquerón Power Squadron
               </span>
             </h1>
           </AnimatedSection>
 
           <AnimatedSection delay={0.2}>
+            <p className="text-xl sm:text-2xl mb-4 text-white/85 max-w-3xl mx-auto leading-relaxed">
+              Navega con confianza y seguridad.
+            </p>
             <p className="text-xl sm:text-2xl mb-10 text-white/85 max-w-3xl mx-auto leading-relaxed">
               Obtén tu licencia de navegación para botes, jet skis y embarcaciones.
               Certificación reconocida por el DRNA de Puerto Rico.

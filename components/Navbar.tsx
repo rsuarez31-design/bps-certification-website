@@ -45,23 +45,15 @@ export default function Navbar() {
       <div className="container-custom">
         <div className="flex items-center justify-between h-20">
           {/* Logo y nombre */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-            <div className="w-16 h-16 relative flex-shrink-0">
+          <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+            <div className="w-[150px] h-[150px] relative flex-shrink-0 -mt-4 -mb-12">
               <Image
                 src="/images/bps-logo.png"
                 alt="BPS Logo"
                 fill
                 className="object-contain rounded-full"
-                sizes="64px"
+                sizes="150px"
               />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg leading-tight text-white">
-                Americas Boating Club
-              </span>
-              <span className="text-sm leading-tight text-ocean-200">
-                Boquerón Power Squadron
-              </span>
             </div>
           </Link>
 
