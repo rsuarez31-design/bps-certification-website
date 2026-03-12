@@ -30,10 +30,8 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/somos', label: 'Somos' },
-    { href: '/matricula', label: 'Matrícula' },
     { href: '/practica', label: 'Práctica' },
     { href: '/examen', label: 'Examen Oficial' },
-    { href: '/admin', label: 'Admin' },
   ];
 
   return (

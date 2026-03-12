@@ -58,8 +58,8 @@ export default function Footer() {
                 {[
                   { href: '/', label: 'Inicio' },
                   { href: '/somos', label: 'Somos' },
-                  { href: '/matricula', label: 'Matrícula Digital' },
-                  { href: '/practica', label: 'Examen de Práctica' },
+                  { href: '/matricula', label: 'Inscríbete' },
+                  { href: '/practica', label: 'Práctica' },
                   { href: '/examen', label: 'Examen Oficial' },
                   { href: '/admin', label: 'Panel Administrativo' },
                 ].map((link) => (

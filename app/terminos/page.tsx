@@ -26,9 +26,6 @@ export default function TerminosPage() {
           <h1 className="text-4xl font-bold text-navy mb-4">
             Términos y Condiciones
           </h1>
-          <p className="text-gray-600">
-            Última actualización: Enero 2026
-          </p>
         </div>
 
         {/* Contenido */}
@@ -59,8 +56,8 @@ export default function TerminosPage() {
             <h2 className="text-2xl font-bold text-navy mb-4">3. Inscripción y Pago</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-700">
               <li>El costo del curso de certificación es de $80.00 USD.</li>
-              <li>El envío opcional del libro de texto por correo tiene un costo adicional de $10.00 USD.</li>
-              <li>Los pagos se procesan de forma segura a través de Stripe.</li>
+              <li>El envío opcional del libro de texto por correo tiene un costo adicional. El monto vigente se indica en el formulario de inscripción al momento de completar la matrícula.</li>
+              <li>Los pagos se procesan de forma segura a través de un procesador de pagos certificado que cumple con los estándares de seguridad de la industria.</li>
               <li>Una vez procesado el pago, no se realizan reembolsos excepto en circunstancias
                 especiales evaluadas caso por caso.</li>
               <li>La inscripción se confirma una vez que el pago ha sido verificado exitosamente.</li>

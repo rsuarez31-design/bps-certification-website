@@ -45,7 +45,7 @@ export default function PrivacidadPage() {
               <li>Características físicas (requeridas para el certificado de navegación)</li>
               <li>Información de la embarcación (si aplica)</li>
               <li>Resultados de los exámenes de certificación</li>
-              <li>Información de pago procesada a través de Stripe</li>
+              <li>Información de pago procesada a través de nuestro procesador de pagos autorizado</li>
             </ul>
           </section>
 
@@ -67,28 +67,20 @@ export default function PrivacidadPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-navy mb-4">3. Procesamiento de Pagos</h2>
             <p className="text-gray-700 leading-relaxed">
-              Los pagos se procesan de forma segura a través de Stripe. No almacenamos
-              números de tarjetas de crédito ni datos financieros sensibles en nuestros
-              servidores. Stripe cumple con los estándares PCI DSS de seguridad en pagos.
-              Para más información, consulta la{' '}
-              <a
-                href="https://stripe.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-navy underline hover:text-navy-light"
-              >
-                política de privacidad de Stripe
-              </a>.
+              Los pagos se procesan de forma segura a través de un procesador de pagos
+              certificado y autorizado. No almacenamos números de tarjetas de crédito ni
+              datos financieros sensibles en nuestros servidores. Nuestro procesador de
+              pagos cumple con los estándares PCI DSS de seguridad en la industria de pagos.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-navy mb-4">4. Almacenamiento de Datos</h2>
             <p className="text-gray-700 leading-relaxed">
-              Tu información se almacena de forma segura en servidores protegidos
-              proporcionados por Supabase. Implementamos medidas de seguridad técnicas
-              y organizativas para proteger tus datos personales contra acceso no
-              autorizado, pérdida o alteración.
+              Tu información se almacena de forma segura en servidores protegidos con
+              acceso restringido. Implementamos medidas de seguridad técnicas y
+              organizativas apropiadas para proteger tus datos personales contra acceso
+              no autorizado, pérdida, alteración o divulgación indebida.
             </p>
           </section>
 
@@ -100,8 +92,8 @@ export default function PrivacidadPage() {
             <ul className="list-disc list-inside space-y-2 text-gray-700">
               <li>Con el Departamento de Recursos Naturales y Ambientales (DRNA), según lo
                 requiera la Ley 430 para el proceso de certificación</li>
-              <li>Con proveedores de servicios necesarios para operar el sitio (Stripe para
-                pagos, Supabase para almacenamiento)</li>
+              <li>Con proveedores de servicios de confianza necesarios para operar el sitio,
+                tales como procesamiento de pagos y almacenamiento seguro de datos</li>
               <li>Cuando sea requerido por ley o proceso legal</li>
             </ul>
           </section>

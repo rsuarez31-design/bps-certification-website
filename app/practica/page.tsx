@@ -328,15 +328,14 @@ export default function PracticaPage() {
                           <h3 className="font-bold text-lg text-gray-800 mb-4">{question.question}</h3>
                           <div className="space-y-2">
                             {question.options.map((option, optIndex) => {
-                              const isCorrectOpt = optIndex === question.correctAnswer;
                               const isStudentChoice = optIndex === studentAnswer;
                               return (
-                                <div key={optIndex} className={`p-3 rounded-lg ${isCorrectOpt ? 'bg-maritime-green/20 border-2 border-maritime-green' : isStudentChoice ? 'bg-maritime-red/20 border-2 border-maritime-red' : 'bg-gray-100'}`}>
+                                <div key={optIndex} className={`p-3 rounded-lg ${isStudentChoice && !isCorrect ? 'bg-maritime-red/20 border-2 border-maritime-red' : isStudentChoice && isCorrect ? 'bg-maritime-green/20 border-2 border-maritime-green' : 'bg-gray-100'}`}>
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold">{['A', 'B', 'C', 'D'][optIndex]})</span>
                                     <span>{option}</span>
-                                    {isCorrectOpt && <span className="ml-auto text-maritime-green font-bold">Correcta</span>}
-                                    {isStudentChoice && !isCorrectOpt && <span className="ml-auto text-maritime-red font-bold">Tu respuesta</span>}
+                                    {isStudentChoice && isCorrect && <span className="ml-auto text-maritime-green font-bold">Correcta</span>}
+                                    {isStudentChoice && !isCorrect && <span className="ml-auto text-maritime-red font-bold">Tu respuesta</span>}
                                   </div>
                                 </div>
                               );

@@ -1,0 +1,90 @@
+---
+description: Regla para subir cambios del proyecto BPS al repositorio de GitHub. Activar cuando el usuario pida deploy, push, subir, publicar o actualizar el repositorio.
+alwaysApply: false
+---
+
+# Deploy / Push al Repositorio de GitHub
+
+Cuando el usuario pida subir, publicar, hacer deploy o push de cambios al repositorio de GitHub, sigue estos pasos **en orden y sin omitir ninguno**:
+
+## Repositorio destino
+
+- **URL**: `https://github.com/rsuarez31-design/bps-certification-website.git`
+- **Branch principal**: `main`
+- **Directorio del proyecto**: `/Users/ramonsuarez/Desktop/BPS/bps-website`
+
+## Pasos obligatorios
+
+### 1. Verificar build antes de subir
+
+```bash
+cd /Users/ramonsuarez/Desktop/BPS/bps-website && npm run build
+```
+
+- Si hay errores de compilación, **corregirlos antes de continuar**.
+- No subir código que no compile.
+
+### 2. Revisar el estado de git
+
+```bash
+git status
+git diff --stat
+```
+
+- Verificar que `.env.local` y `node_modules` NO estén incluidos.
+- Verificar que no haya archivos con secretos (claves, tokens, contraseñas).
+
+### 3. Agregar todos los archivos modificados
+
+```bash
+git add -A
+```
+
+### 4. Crear el commit con mensaje descriptivo
+
+- El mensaje debe estar en **español**.
+- Describir brevemente qué cambios se hicieron (el "por qué", no el "qué").
+- Usar formato HEREDOC para mensajes multilínea.
+
+```bash
+git commit -m "$(cat <<'EOF'
+Descripción breve del cambio
+
+- Detalle 1
+- Detalle 2
+EOF
+)"
+```
+
+### 5. Pedir confirmación al usuario antes del push
+
+**OBLIGATORIO**: Antes de ejecutar `git push`, mostrar al usuario un resumen de lo que se va a subir y pedirle confirmación con una pregunta Sí/No usando la herramienta AskQuestion:
+
+- Pregunta: "¿Confirmas que deseas subir estos cambios a GitHub?"
+- Opciones: "Sí, subir a GitHub" / "No, cancelar"
+- **Solo continuar al paso 6 si el usuario responde "Sí"**.
+- Si responde "No", **detener el proceso**, informar que el push fue cancelado y que el commit quedó local.
+
+### 6. Push al repositorio
+
+Solo ejecutar si el usuario confirmó "Sí" en el paso anterior.
+
+```bash
+git push origin main
+```
+
+- Si el push falla por cambios remotos, **preguntar al usuario** antes de hacer `pull` o `force push`.
+- **NUNCA** hacer `git push --force` sin aprobación explícita del usuario.
+
+## Reglas de seguridad
+
+- **NUNCA** subir `.env.local` ni archivos con claves secretas
+- **NUNCA** modificar la configuración de git (user.name, user.email)
+- **NUNCA** hacer `push --force` a `main` sin pedir permiso
+- **NUNCA** hacer `git reset --hard` sin pedir permiso
+- Siempre verificar que el build pase antes de subir
+
+## Después del push
+
+- Confirmar al usuario que el push fue exitoso
+- Mostrar el link del repositorio: https://github.com/rsuarez31-design/bps-certification-website
