@@ -1,0 +1,48 @@
+# =============================================================
+# KEEP SUPABASE ALIVE - Mantener Supabase Activo
+#
+# Este workflow se ejecuta automaticamente cada 5 dias
+# para hacer una consulta simple a la base de datos de Supabase.
+# Esto evita que el proyecto se pause por inactividad
+# (el plan gratuito de Supabase pausa proyectos despues de 7 dias).
+#
+# CONFIGURACIÓN REQUERIDA:
+# Ve a tu repositorio en GitHub → Settings → Secrets and variables → Actions
+# y agrega estos dos secretos:
+#   1. SUPABASE_URL       → La URL de tu proyecto Supabase
+#   2. SUPABASE_ANON_KEY  → La clave pública (anon key) de Supabase
+# =============================================================
+
+name: Keep Supabase Alive
+
+on:
+  # Ejecutar cada 5 dias a las 8:00 AM UTC
+  schedule:
+    - cron: '0 8 */5 * *'
+
+  # Permitir ejecutar manualmente desde la pestaña Actions de GitHub
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Consultar Supabase para mantenerlo activo
+        run: |
+          echo "Enviando consulta a Supabase para evitar pausa por inactividad..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/exam_questions?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+
+          echo "Codigo de respuesta HTTP: $RESPONSE"
+
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+            echo "Supabase respondio correctamente. Proyecto activo."
+          else
+            echo "ADVERTENCIA: Supabase respondio con codigo $RESPONSE"
+            exit 1
+          fi
