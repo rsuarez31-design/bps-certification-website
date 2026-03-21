@@ -1,7 +1,8 @@
 /**
  * RUTA DE API: Webhook de Stripe
  *
- * Stripe nos avisa aquí cuando un pago se completa.
+ * Eventos útiles en Stripe Dashboard: checkout.session.completed, checkout.session.expired
+ * (el segundo elimina borradores si la sesión de pago expira sin pagar).
  * Es más confiable que verificar cuando el estudiante regresa,
  * porque funciona aunque el estudiante cierre la ventana.
  *
@@ -12,6 +13,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-server';
+import { eliminarMatriculaSiPendiente } from '@/lib/eliminar-matricula-pendiente';
+
+export const dynamic = 'force-dynamic';
 
 // Crear el cliente de Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -57,11 +61,17 @@ export async function POST(request: NextRequest) {
 
       if (registrationId) {
         // Actualizar la matrícula en la base de datos: marcarla como "pagada"
+        const paymentIntentId =
+          typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : (session.payment_intent as Stripe.PaymentIntent | null)?.id;
+
         const { error } = await supabaseAdmin
           .from('registrations')
           .update({
             payment_status: 'paid',
-            stripe_payment_intent_id: session.payment_intent as string,
+            stripe_checkout_session_id: session.id,
+            ...(paymentIntentId ? { stripe_payment_intent_id: paymentIntentId } : {}),
           })
           .eq('id', registrationId);
 
@@ -69,6 +79,18 @@ export async function POST(request: NextRequest) {
           console.error('Error al actualizar matrícula:', error);
         } else {
           console.log(`Matrícula ${registrationId} marcada como PAGADA`);
+        }
+      }
+    }
+
+    // Sesión de Checkout expirada sin pago: quitar borrador de la base de datos
+    if (event.type === 'checkout.session.expired') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const registrationId = session.metadata?.registrationId;
+      if (registrationId) {
+        const r = await eliminarMatriculaSiPendiente(registrationId);
+        if (r.ok) {
+          console.log(`Matrícula pendiente ${registrationId} eliminada (sesión expirada)`);
         }
       }
     }

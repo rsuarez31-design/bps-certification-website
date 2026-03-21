@@ -4,7 +4,6 @@
  * Solo para administradores del BPS. Protegida con usuario y contraseña.
  *
  * Pestañas:
- * - Estadísticas: totales de inscritos, pagos, aprobación, ingresos
  * - Matrículas: tabla con filtros, detalles, tracking number
  * - Exámenes: historial de intentos
  * - Preguntas Falladas: top 10 preguntas con más errores
@@ -16,9 +15,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import {
-  Lock, Users, BarChart3, Award, AlertTriangle,
-  CheckCircle2, Clock, XCircle, Eye, ClipboardList,
-  CreditCard, LogOut, Settings, X, Download, Save,
+  Lock, Users, AlertTriangle,
+  Eye, ClipboardList,
+  LogOut, Settings, X, Download, Save,
   Package, FileText
 } from 'lucide-react';
 
@@ -82,14 +81,9 @@ interface FailedQuestion {
   fail_count: number;
 }
 
-interface Stats {
-  totalRegistrations: number;
-  paidRegistrations: number;
-  pendingRegistrations: number;
-  totalExamAttempts: number;
-  officialAttempts: number;
-  passRate: number;
-  totalRevenue: number;
+/** Compara el estado guardado en BD (puede variar mayúsculas) */
+function estadoEsPagado(status: string | null | undefined) {
+  return (status || '').toLowerCase().trim() === 'paid';
 }
 
 // Meses del año para filtros y configuración
@@ -106,20 +100,17 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
 
   // Datos
-  const [stats, setStats] = useState<Stats>({
-    totalRegistrations: 0, paidRegistrations: 0, pendingRegistrations: 0,
-    totalExamAttempts: 0, officialAttempts: 0, passRate: 0, totalRevenue: 0,
-  });
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([]);
   const [failedQuestions, setFailedQuestions] = useState<FailedQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Navegación y filtros
-  const [activeTab, setActiveTab] = useState<'stats' | 'registrations' | 'exams' | 'questions' | 'config'>('stats');
-  const [registrationFilter, setRegistrationFilter] = useState<'all' | 'paid' | 'pending'>('paid');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'exams' | 'questions' | 'config'>('registrations');
   const [filterMonth, setFilterMonth] = useState('Todos');
   const [filterYear, setFilterYear] = useState('Todos');
+  /** Mensaje si la API de matrículas falla (antes la lista quedaba vacía sin explicación) */
+  const [registrationsError, setRegistrationsError] = useState<string | null>(null);
 
   // Modal de detalle de matrícula
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
@@ -159,18 +150,35 @@ export default function AdminPage() {
 
   // --- Cargar matrículas desde ruta API segura ---
   const loadRegistrations = async () => {
+    setRegistrationsError(null);
     try {
-      const params = new URLSearchParams({ filter: registrationFilter });
+      const params = new URLSearchParams();
       if (filterMonth !== 'Todos') params.set('month', filterMonth);
       if (filterYear !== 'Todos') params.set('year', filterYear);
 
-      const res = await fetch(`/api/admin/registrations?${params.toString()}`);
-      const data = await res.json();
-      if (data.registrations) {
+      const qs = params.toString();
+      const res = await fetch(qs ? `/api/admin/registrations?${qs}` : '/api/admin/registrations');
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg = data.error || `Error del servidor (${res.status}) al cargar matrículas.`;
+        setRegistrationsError(msg);
+        setRegistrations([]);
+        console.error('Error HTTP al cargar matrículas:', res.status, data);
+        return;
+      }
+      if (Array.isArray(data.registrations)) {
         setRegistrations(data.registrations);
+      } else if (data.error) {
+        setRegistrationsError(data.error);
+        setRegistrations([]);
+      } else {
+        setRegistrations([]);
       }
     } catch (error) {
       console.error('Error al cargar matrículas:', error);
+      setRegistrationsError('No se pudo conectar para cargar matrículas. Revisa tu red o vuelve a intentar.');
+      setRegistrations([]);
     }
   };
 
@@ -221,29 +229,6 @@ export default function AdminPage() {
           .slice(0, 10);
         setFailedQuestions(sorted);
       }
-
-      // Estadísticas (cargar todas las matrículas para las cifras globales)
-      const resAll = await fetch('/api/admin/registrations?filter=all');
-      const dataAll = await resAll.json();
-      const allRegs = (dataAll.registrations || []) as Registration[];
-
-      const paidRegs = allRegs.filter(r => r.payment_status === 'paid');
-      const pendingRegs = allRegs.filter(r => r.payment_status === 'pending');
-      const officialAttempts = attemptsList.filter(a => a.exam_type === 'oficial');
-      const passedOfficial = officialAttempts.filter(a => a.passed);
-      const totalRevenue = paidRegs.reduce((sum, r) => sum + (r.amount_total_cents || 0), 0);
-
-      setStats({
-        totalRegistrations: allRegs.length,
-        paidRegistrations: paidRegs.length,
-        pendingRegistrations: pendingRegs.length,
-        totalExamAttempts: attemptsList.length,
-        officialAttempts: officialAttempts.length,
-        passRate: officialAttempts.length > 0
-          ? Math.round((passedOfficial.length / officialAttempts.length) * 100)
-          : 0,
-        totalRevenue: totalRevenue / 100,
-      });
     } catch (error) {
       console.error('Error al cargar datos:', error);
     } finally {
@@ -251,11 +236,12 @@ export default function AdminPage() {
     }
   };
 
-  // Recargar matrículas al cambiar filtros
+  // Recargar matrículas al iniciar sesión o al cambiar filtros
   useEffect(() => {
-    if (isAuthenticated) loadRegistrations();
+    if (!isAuthenticated) return;
+    loadRegistrations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrationFilter, filterMonth, filterYear]);
+  }, [isAuthenticated, filterMonth, filterYear]);
 
   // --- Cargar configuración del curso ---
   const loadConfig = async () => {
@@ -376,7 +362,6 @@ export default function AdminPage() {
         {/* Pestañas */}
         <div className="flex flex-wrap gap-2 mb-8">
           {[
-            { id: 'stats' as const, label: 'Estadísticas', icon: BarChart3 },
             { id: 'registrations' as const, label: 'Matrículas', icon: Users },
             { id: 'exams' as const, label: 'Exámenes', icon: ClipboardList },
             { id: 'questions' as const, label: 'Preguntas Falladas', icon: AlertTriangle },
@@ -395,44 +380,29 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* ===== ESTADÍSTICAS ===== */}
-        {activeTab === 'stats' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="card"><div className="flex items-center gap-3 mb-2"><Users className="w-8 h-8 text-navy" /><div><p className="text-sm text-gray-600">Total Inscritos</p><p className="text-3xl font-bold text-navy">{stats.totalRegistrations}</p></div></div></div>
-              <div className="card"><div className="flex items-center gap-3 mb-2"><CreditCard className="w-8 h-8 text-maritime-green" /><div><p className="text-sm text-gray-600">Pagos Confirmados</p><p className="text-3xl font-bold text-maritime-green">{stats.paidRegistrations}</p></div></div></div>
-              <div className="card"><div className="flex items-center gap-3 mb-2"><Award className="w-8 h-8 text-maritime-gold" /><div><p className="text-sm text-gray-600">% Aprobación Oficial</p><p className="text-3xl font-bold text-navy">{stats.passRate}%</p></div></div></div>
-              <div className="card"><div className="flex items-center gap-3 mb-2"><BarChart3 className="w-8 h-8 text-navy" /><div><p className="text-sm text-gray-600">Ingresos Totales</p><p className="text-3xl font-bold text-navy">${stats.totalRevenue.toFixed(2)}</p></div></div></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="card"><p className="text-sm text-gray-600">Matrículas Pendientes</p><p className="text-2xl font-bold text-maritime-gold">{stats.pendingRegistrations}</p></div>
-              <div className="card"><p className="text-sm text-gray-600">Total Intentos de Examen</p><p className="text-2xl font-bold text-navy">{stats.totalExamAttempts}</p></div>
-              <div className="card"><p className="text-sm text-gray-600">Exámenes Oficiales</p><p className="text-2xl font-bold text-navy">{stats.officialAttempts}</p></div>
-            </div>
-          </div>
-        )}
-
         {/* ===== MATRÍCULAS ===== */}
         {activeTab === 'registrations' && (
           <div className="space-y-6">
-            {/* Filtros de estado de pago */}
-            <div className="flex flex-wrap gap-3 items-center">
-              {[
-                { id: 'paid' as const, label: 'Pagadas' },
-                { id: 'pending' as const, label: 'Pendientes' },
-                { id: 'all' as const, label: 'Todas' },
-              ].map(filter => (
-                <button
-                  key={filter.id}
-                  onClick={() => setRegistrationFilter(filter.id)}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                    registrationFilter === filter.id ? 'bg-navy text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
+            <div>
+              <h2 className="text-2xl font-bold text-navy">Matrículas pagadas</h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Solo aparecen inscripciones con pago confirmado. Los intentos de pago cancelados no se guardan en la base de datos.
+              </p>
+            </div>
 
+            {registrationsError && (
+              <div className="rounded-xl border-2 border-maritime-red/40 bg-maritime-red/10 px-4 py-3 text-maritime-red font-semibold text-sm">
+                {registrationsError}
+              </div>
+            )}
+
+            <p className="text-sm text-gray-600 bg-white/80 rounded-lg px-4 py-3 border border-gray-200">
+              <strong>Filtro por sección del curso:</strong> los selectores <em>Mes</em> y <em>Año</em> buscan dentro del{' '}
+              <strong>título del curso</strong> (ej. &quot;Curso… - Agosto - 2026&quot;).
+              Si no ves a alguien, prueba <strong>Mes: Todos</strong> y <strong>Año: Todos</strong>.
+            </p>
+
+            <div className="flex flex-wrap gap-3 items-center">
               {/* Filtro por mes */}
               <select
                 value={filterMonth}
@@ -452,14 +422,50 @@ export default function AdminPage() {
                 <option value="Todos">Año: Todos</option>
                 {['2025', '2026', '2027', '2028'].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
+
+              {(filterMonth !== 'Todos' || filterYear !== 'Todos') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterMonth('Todos');
+                    setFilterYear('Todos');
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-maritime-gold/20 text-navy border border-maritime-gold/40 hover:bg-maritime-gold/30"
+                >
+                  Quitar filtro mes/año
+                </button>
+              )}
             </div>
 
             {/* Tabla de matrículas */}
-            {registrations.length === 0 ? (
-              <div className="card text-center text-gray-500 py-12">
-                No hay matrículas con los filtros seleccionados.
+            {registrations.length === 0 && !registrationsError ? (
+              <div className="card text-center text-gray-600 py-12 space-y-4">
+                <p className="font-semibold text-navy">No hay matrículas con los filtros actuales.</p>
+                {(filterMonth !== 'Todos' || filterYear !== 'Todos') ? (
+                  <div className="space-y-3">
+                    <p className="text-sm">
+                      Es muy probable que el <strong>título del curso</strong> de la matrícula no contenga el mes o año que elegiste arriba.
+                      Pulsa el botón para mostrar todas las secciones.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterMonth('Todos');
+                        setFilterYear('Todos');
+                      }}
+                      className="btn-primary text-sm"
+                    >
+                      Ver todas las secciones (mes y año: Todos)
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Si acabas de cobrar en Stripe, pulsa <strong>Actualizar Datos</strong>. Si sigue vacío, confirma en Supabase que la fila usa{' '}
+                    <code className="bg-gray-100 px-1 rounded">payment_status = paid</code> y que Vercel tiene la misma base de datos (<code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code>).
+                  </p>
+                )}
               </div>
-            ) : (
+            ) : registrations.length === 0 ? null : (
               <div className="overflow-x-auto">
                 <table className="w-full bg-white rounded-xl shadow-md overflow-hidden">
                   <thead className="bg-navy text-white">
@@ -483,11 +489,11 @@ export default function AdminPage() {
                         <td className="py-3 px-4 text-sm">{reg.email}</td>
                         <td className="py-3 px-4 text-center">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            reg.payment_status === 'paid'
+                            estadoEsPagado(reg.payment_status)
                               ? 'bg-maritime-green/20 text-maritime-green'
                               : 'bg-maritime-gold/20 text-maritime-gold'
                           }`}>
-                            {reg.payment_status === 'paid' ? 'Pagada' : 'Pendiente'}
+                            {estadoEsPagado(reg.payment_status) ? 'Pagada' : 'Pendiente'}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -611,7 +617,7 @@ export default function AdminPage() {
                   <h3 className="font-bold text-navy mb-2">Información de Pago</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div><span className="text-gray-500">Monto Total:</span> <span className="font-bold text-navy">${((selectedRegistration.amount_total_cents || 0) / 100).toFixed(2)}</span></div>
-                    <div><span className="text-gray-500">Estado:</span> <span className={`font-bold ${selectedRegistration.payment_status === 'paid' ? 'text-maritime-green' : 'text-maritime-gold'}`}>{selectedRegistration.payment_status === 'paid' ? 'Pagada' : 'Pendiente'}</span></div>
+                    <div><span className="text-gray-500">Estado:</span> <span className={`font-bold ${estadoEsPagado(selectedRegistration.payment_status) ? 'text-maritime-green' : 'text-maritime-gold'}`}>{estadoEsPagado(selectedRegistration.payment_status) ? 'Pagada' : 'Pendiente'}</span></div>
                     <div><span className="text-gray-500">Envío Libro:</span> <span className="font-semibold">{selectedRegistration.wants_book_shipping ? 'Sí (+$13.00)' : 'No'}</span></div>
                     <div><span className="text-gray-500">Fecha:</span> <span className="font-semibold">{new Date(selectedRegistration.created_at).toLocaleDateString('es-PR', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
                   </div>

@@ -2,8 +2,8 @@
  * PÁGINA DE MATRÍCULA DIGITAL
  *
  * Formulario de inscripción para el curso de navegación.
- * Al completar el formulario y pagar, la información se guarda
- * en Supabase y aparece en el Panel Administrativo.
+ * Tras un pago exitoso la inscripción queda en Supabase (solo pagadas en el panel).
+ * Si se cancela el pago o falla Checkout, el borrador pending se elimina.
  *
  * Secciones del formulario:
  * 1. Información del Curso (título dinámico + fecha automática)
@@ -85,6 +85,7 @@ function MatriculaContent() {
   const searchParams = useSearchParams();
   const paymentSuccess = searchParams.get('success') === 'true';
   const paymentCanceled = searchParams.get('canceled') === 'true';
+  const registrationIdAlCancelar = searchParams.get('registration_id');
 
   // Fecha de hoy en formato YYYY-MM-DD (para campos automáticos)
   const hoy = new Date().toISOString().split('T')[0];
@@ -164,6 +165,23 @@ function MatriculaContent() {
     }
   }, [sameAddress, formData.postalAddress]);
 
+  /**
+   * Si el usuario cancela en Stripe, la URL trae registration_id.
+   * Borramos el borrador "pending" en la base para no acumular inscripciones sin pago.
+   */
+  useEffect(() => {
+    if (!paymentCanceled || !registrationIdAlCancelar) return;
+    if (typeof window === 'undefined') return;
+    const marca = `bps_abandon_${registrationIdAlCancelar}`;
+    if (sessionStorage.getItem(marca)) return;
+    sessionStorage.setItem(marca, '1');
+    fetch('/api/registrations/abandon-pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ registrationId: registrationIdAlCancelar }),
+    }).catch(() => {});
+  }, [paymentCanceled, registrationIdAlCancelar]);
+
   // Manejar cambios en los campos de texto
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -237,10 +255,12 @@ function MatriculaContent() {
     }
 
     setIsProcessingPayment(true);
+    /** Si falla Stripe después de insertar, borramos el borrador pending */
+    let idMatriculaCreada: string | null = null;
     try {
       const totalCents = wantsBookShipping ? 9300 : 8000;
 
-      // PASO 1: Guardar matrícula con estado "pending"
+      // PASO 1: Guardar matrícula con estado "pending" (se borra si no hay pago o si falla Checkout)
       const { data: registration, error: dbError } = await supabase
         .from('registrations')
         .insert({
@@ -280,6 +300,7 @@ function MatriculaContent() {
       if (dbError || !registration) {
         throw new Error('No se pudo guardar la matrícula: ' + (dbError?.message || 'Error desconocido'));
       }
+      idMatriculaCreada = registration.id;
 
       // PASO 2: Subir archivo de identificación (si se seleccionó uno)
       if (idFile) {
@@ -307,12 +328,24 @@ function MatriculaContent() {
       });
       const stripeData = await stripeResponse.json();
 
-      if (!stripeData.url) throw new Error('No se pudo crear la sesión de pago');
+      if (stripeData.error) {
+        throw new Error(stripeData.error);
+      }
+      if (!stripeData.url) {
+        throw new Error('No se pudo crear la sesión de pago. Verifica que el sistema de pagos esté configurado correctamente.');
+      }
 
       // PASO 4: Redirigir a Stripe
       window.location.href = stripeData.url;
     } catch (error: any) {
       console.error('Error al procesar matrícula:', error);
+      if (idMatriculaCreada) {
+        fetch('/api/registrations/abandon-pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ registrationId: idMatriculaCreada }),
+        }).catch(() => {});
+      }
       setErrors([error.message || 'Ocurrió un error al procesar tu matrícula. Por favor intenta de nuevo.']);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
@@ -351,10 +384,12 @@ function MatriculaContent() {
               <AlertCircle className="w-12 h-12 text-maritime-red" />
             </div>
             <h1 className="text-3xl font-bold text-navy mb-4">Pago Cancelado</h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Tu pago fue cancelado. Puedes intentar de nuevo completando el formulario.
+            <p className="text-lg text-gray-600 mb-6">
+              {registrationIdAlCancelar
+                ? 'No se completó el pago. Tu borrador de inscripción se descartó y no quedó guardado en nuestro sistema.'
+                : 'Tu pago fue cancelado. Puedes intentar de nuevo completando el formulario.'}
             </p>
-            <a href="/matricula" className="btn-primary inline-block">Intentar de Nuevo</a>
+            <a href="/matricula" className="btn-primary inline-block">Volver al formulario</a>
           </div>
         </div>
       </div>

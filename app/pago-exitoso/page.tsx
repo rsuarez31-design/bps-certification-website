@@ -23,12 +23,45 @@ function PagoExitosoContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [animado, setAnimado] = useState(false);
+  /** Respaldo si el webhook de Stripe no llegó: marcar matrícula como pagada en Supabase */
+  const [syncEstado, setSyncEstado] = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle');
 
   // Activar la animación de entrada después de que se cargue la página
   useEffect(() => {
     const timer = setTimeout(() => setAnimado(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Confirmar pago en nuestra base (igual que haría el webhook, pero al abrir esta página)
+  useEffect(() => {
+    if (!sessionId || !sessionId.startsWith('cs_')) return;
+    let cancelado = false;
+    setSyncEstado('syncing');
+    (async () => {
+      try {
+        const res = await fetch('/api/stripe/confirm-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = await res.json();
+        if (cancelado) return;
+        if (res.ok && data.success) {
+          setSyncEstado('ok');
+        } else if (data.error) {
+          setSyncEstado('error');
+          console.warn('No se pudo sincronizar el pago con el panel:', data.error);
+        } else {
+          setSyncEstado('idle');
+        }
+      } catch {
+        if (!cancelado) setSyncEstado('error');
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [sessionId]);
 
   return (
     <div className="min-h-screen bg-ice pt-28 pb-12">
@@ -50,10 +83,26 @@ function PagoExitosoContent() {
 
           {/* Resumen del pago */}
           {sessionId && (
-            <div className="bg-ice rounded-lg p-4 mb-8 inline-block">
+            <div className="bg-ice rounded-lg p-4 mb-8 inline-block text-left max-w-md mx-auto">
               <p className="text-sm text-gray-500">
                 Confirmación: <span className="font-mono text-gray-700">{sessionId.slice(0, 20)}...</span>
               </p>
+              {syncEstado === 'syncing' && (
+                <p className="text-xs text-gray-500 mt-2 flex items-center gap-2 justify-center">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Sincronizando tu inscripción con el sistema…
+                </p>
+              )}
+              {syncEstado === 'ok' && (
+                <p className="text-xs text-maritime-green mt-2 font-medium">
+                  Tu matrícula quedó registrada como pagada en el panel administrativo.
+                </p>
+              )}
+              {syncEstado === 'error' && (
+                <p className="text-xs text-amber-700 mt-2">
+                  Si no ves el pago en el panel, revisa el webhook en Stripe o pulsa &quot;Actualizar Datos&quot; más tarde.
+                </p>
+              )}
             </div>
           )}
         </div>
