@@ -746,7 +746,7 @@ export default function AdminPage() {
                 {/* Preview del título */}
                 <div className="bg-navy/5 rounded-lg p-4">
                   <p className="text-sm text-gray-500">Vista previa del título:</p>
-                  <p className="font-bold text-navy text-lg">Curso Básico De Navegación ABC - {configMonth} - {configYear}</p>
+                  <p className="font-bold text-navy text-lg">Curso Básico De Navegación - {configMonth} - {configYear}</p>
                 </div>
 
                 <button onClick={saveConfig} disabled={savingConfig} className="btn-primary w-full disabled:opacity-50">

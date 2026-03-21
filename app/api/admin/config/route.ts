@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
@@ -16,11 +18,13 @@ export async function GET() {
       .single();
 
     if (error) {
+      console.error('Error al leer config:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data);
   } catch (err: any) {
+    console.error('Error inesperado en GET config:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -44,11 +48,13 @@ export async function PUT(request: NextRequest) {
       .eq('id', 'default');
 
     if (error) {
+      console.error('Error al actualizar config:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
+    console.error('Error inesperado en PUT config:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

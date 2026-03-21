@@ -142,7 +142,7 @@ function MatriculaContent() {
           .single();
 
         if (data) {
-          const titulo = `Curso Básico De Navegación ABC - ${data.course_month} - ${data.course_year}`;
+          const titulo = `Curso Básico De Navegación - ${data.course_month} - ${data.course_year}`;
           setFormData(prev => ({ ...prev, courseName: titulo }));
         }
       } catch (err) {
