@@ -62,6 +62,12 @@ export default function PrivacidadPage() {
               <li>Cumplir con los requisitos de la Ley 430 de Puerto Rico</li>
               <li>Mejorar nuestros servicios educativos</li>
             </ul>
+            <p className="text-gray-700 leading-relaxed mt-4">
+              La información necesaria para obtener la certificación únicamente se comparte
+              con el Departamento de Recursos Naturales y Ambientales (DRNA) y con el
+              Comisionado de Navegación de Puerto Rico, conforme a las leyes aplicables
+              de Puerto Rico.
+            </p>
           </section>
 
           <section className="mb-8">

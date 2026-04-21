@@ -110,7 +110,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             <AnimatedSection delay={0} className="text-center">
               <div className="text-4xl sm:text-5xl font-bold text-ocean mb-2">
-                <Counter end={500} suffix="+" />
+                <Counter end={3000} suffix="+" />
               </div>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Estudiantes Certificados</p>
             </AnimatedSection>
@@ -131,7 +131,7 @@ export default function HomePage() {
 
             <AnimatedSection delay={0.3} className="text-center">
               <div className="text-4xl sm:text-5xl font-bold text-maritime-coral mb-2">
-                <Counter end={50} suffix="+" />
+                <Counter end={30} suffix="+" />
               </div>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Años de Experiencia</p>
             </AnimatedSection>
@@ -246,7 +246,7 @@ export default function HomePage() {
               {
                 icon: Users,
                 title: 'Edad Mínima Requerida',
-                desc: 'Los operadores deben tener al menos 16 años para operar una embarcación sin supervisión de un adulto certificado.',
+                desc: 'A partir de los 12 años se puede obtener la licencia y operar una embarcación bajo la supervisión de un adulto certificado. Los operadores deben tener al menos 16 años para operar una embarcación sin supervisión de un adulto certificado.',
                 color: 'gold',
               },
               {
@@ -322,7 +322,7 @@ export default function HomePage() {
               {
                 step: '1',
                 title: 'Inscríbete',
-                desc: 'Completa el formulario de matrícula y realiza el pago de $80 de forma segura.',
+                desc: 'Completa el formulario de matrícula y realiza el pago de forma segura.',
                 icon: FileText,
               },
               {
@@ -385,7 +385,7 @@ export default function HomePage() {
                   ¿Listo para Zarpar?
                 </h2>
                 <p className="text-xl mb-10 max-w-2xl mx-auto text-white/85 leading-relaxed">
-                  Únete a más de 500 navegantes certificados en Puerto Rico.
+                  Únete a más de 3,000 navegantes certificados en Puerto Rico.
                   Tu aventura en las aguas del Caribe comienza hoy.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
