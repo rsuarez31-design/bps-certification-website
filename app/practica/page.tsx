@@ -40,9 +40,6 @@ export default function PracticaPage() {
   // Estado del examen: no empezó, en progreso, o terminó
   const [examStatus, setExamStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
 
-  // Nombre del estudiante
-  const [studentName, setStudentName] = useState('');
-
   // Resultados finales
   const [results, setResults] = useState<{
     correct: number;
@@ -58,11 +55,8 @@ export default function PracticaPage() {
   const [cargando, setCargando] = useState(false);
 
   // --- Iniciar el examen de práctica ---
+  // El examen de práctica es anónimo: no se requiere ningún dato del usuario.
   const startExam = async () => {
-    if (!studentName.trim()) {
-      alert('Por favor ingresa tu nombre completo');
-      return;
-    }
     setCargando(true);
     try {
       const todasLasPreguntas = await cargarPreguntas();
@@ -118,7 +112,9 @@ export default function PracticaPage() {
       const { data: attempt } = await supabase
         .from('exam_attempts')
         .insert({
-          student_name: studentName,
+          // El examen de práctica es anónimo; se guarda un valor genérico
+          // para cumplir con la columna NOT NULL de la tabla.
+          student_name: 'Anónimo (Práctica)',
           exam_type: 'practica',
           total_questions: questions.length,
           correct_answers: correct,
@@ -185,18 +181,6 @@ export default function PracticaPage() {
                 <li>- Es solo para práctica, no afecta tu certificación</li>
                 <li>- Puedes tomarlo las veces que quieras</li>
               </ul>
-            </div>
-
-            <div className="mb-8">
-              <label className="input-label text-left">Nombre Completo <span className="text-maritime-red">*</span></label>
-              <input
-                type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                placeholder="Ingresa tu nombre completo"
-                className="input-field text-lg"
-                onKeyDown={(e) => { if (e.key === 'Enter') startExam(); }}
-              />
             </div>
 
             <button onClick={startExam} disabled={cargando} className="btn-primary text-xl px-12 py-4 flex items-center justify-center gap-3 mx-auto">

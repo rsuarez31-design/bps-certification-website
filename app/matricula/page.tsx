@@ -711,6 +711,9 @@ function MatriculaContent() {
                 <div>
                   <p className="font-semibold text-gray-800">Curso de Certificación de Navegación</p>
                   <p className="text-sm text-gray-600">Incluye examen y certificación</p>
+                  <p className="text-sm text-gray-600">
+                    Incluye libro de texto para recoger en Mayagüez o Cabo Rojo
+                  </p>
                 </div>
                 <p className="text-2xl font-bold text-navy">$80.00</p>
               </div>
