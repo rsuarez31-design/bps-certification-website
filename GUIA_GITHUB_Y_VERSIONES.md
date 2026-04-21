@@ -18,7 +18,9 @@
 ## 1. ¿Qué es Git y GitHub?
 
 ### Git
+
 Git es un programa que **guarda el historial de cambios** de tu proyecto. Cada vez que haces un cambio importante, le dices a Git: "Guarda esto". Así puedes:
+
 - Ver qué cambió y cuándo
 - Volver a una versión anterior si algo se rompe
 - Trabajar en nuevas funciones sin afectar lo que ya funciona
@@ -26,13 +28,16 @@ Git es un programa que **guarda el historial de cambios** de tu proyecto. Cada v
 Piénsalo como un "Control+Z" súper potente que recuerda **toda** la historia de tu proyecto.
 
 ### GitHub
+
 GitHub es un sitio web donde **subes tu proyecto** para tenerlo guardado en la nube. Es como Google Drive pero diseñado específicamente para código. Ventajas:
+
 - Tu código está seguro aunque tu computadora se dañe
 - Puedes acceder desde cualquier lugar
 - Permite que otras personas colaboren contigo
 - Es donde se ejecutan los GitHub Actions (como el que mantiene Supabase activo)
 
 ### ¿Cuál es la diferencia?
+
 - **Git** = el programa que instalas en tu computadora
 - **GitHub** = el sitio web donde subes tu código
 
@@ -86,10 +91,10 @@ Un **repositorio** (o "repo") es como una carpeta en GitHub donde vive tu proyec
 1. Inicia sesión en [github.com](https://github.com)
 2. En la esquina superior derecha, haz clic en el **"+"** y selecciona **"New repository"**
 3. Completa los campos:
-   - **Repository name**: `bps-website` (o el nombre que prefieras)
-   - **Description**: `Sitio web de Americas Boating Club - Boquerón Power Squadron`
-   - **Visibilidad**: Elige **Private** (privado) si no quieres que sea público
-   - **NO** marques ninguna de las casillas de abajo (no inicialices con README ni .gitignore, ya los tenemos)
+  - **Repository name**: `bps-website` (o el nombre que prefieras)
+  - **Description**: `Sitio web de Americas Boating Club - Boquerón Power Squadron`
+  - **Visibilidad**: Elige **Private** (privado) si no quieres que sea público
+  - **NO** marques ninguna de las casillas de abajo (no inicialices con README ni .gitignore, ya los tenemos)
 4. Haz clic en **"Create repository"**
 
 GitHub te mostrará una página con instrucciones. **No cierres esa página**, la necesitarás en el siguiente paso.
@@ -154,6 +159,7 @@ EOF
 ```
 
 **¿Por qué existe el .gitignore?** Hay archivos que **nunca** deben subirse a GitHub:
+
 - `.env.local` — contiene tus contraseñas de Supabase, Stripe, etc.
 - `node_modules/` — son miles de archivos que se pueden reinstalar con `npm install`
 - `.next/` — archivos temporales que Next.js genera automáticamente
@@ -194,10 +200,11 @@ git push origin --tags
 ```
 
 Explicación de cada línea:
-- **`git remote add origin`** — Le dice a Git dónde está tu repositorio en GitHub
-- **`git branch -M main`** — Renombra la rama principal a "main"
-- **`git push -u origin main`** — Sube todos los archivos a GitHub
-- **`git push origin --tags`** — Sube las etiquetas de versión a GitHub
+
+- `**git remote add origin**` — Le dice a Git dónde está tu repositorio en GitHub
+- `**git branch -M main**` — Renombra la rama principal a "main"
+- `**git push -u origin main**` — Sube todos los archivos a GitHub
+- `**git push origin --tags**` — Sube las etiquetas de versión a GitHub
 
 Te pedirá tu usuario y contraseña de GitHub. Si te pide un "token" en vez de contraseña, sigue los pasos de la sección [Errores Comunes](#10-errores-comunes-y-soluciones).
 
@@ -214,6 +221,7 @@ git status
 ```
 
 Este comando te muestra:
+
 - **Archivos en rojo**: Fueron modificados pero no están preparados para guardar
 - **Archivos en verde**: Están listos para guardar
 - **Archivos "untracked"**: Son nuevos y Git todavía no los conoce
@@ -285,12 +293,14 @@ v1.0.0
 
 ### Ejemplos prácticos para tu proyecto:
 
-| Versión | Cuándo usarla | Ejemplo |
-|---|---|---|
+
+| Versión             | Cuándo usarla               | Ejemplo                                 |
+| ------------------- | --------------------------- | --------------------------------------- |
 | v1.0.0 → **v1.0.1** | Corregiste un error pequeño | Arreglar un typo en la página de inicio |
-| v1.0.1 → **v1.1.0** | Agregaste algo nuevo | Agregar página de "Somos" |
-| v1.1.0 → **v1.2.0** | Otra función nueva | Integrar pagos con Stripe |
-| v1.2.0 → **v2.0.0** | Rediseño visual completo | Cambio de estilo a tema tropical |
+| v1.0.1 → **v1.1.0** | Agregaste algo nuevo        | Agregar página de "Somos"               |
+| v1.1.0 → **v1.2.0** | Otra función nueva          | Integrar pagos con Stripe               |
+| v1.2.0 → **v2.0.0** | Rediseño visual completo    | Cambio de estilo a tema tropical        |
+
 
 ### Cómo crear una versión
 
@@ -308,8 +318,8 @@ Si hay cambios sin guardar, haz commit primero (ver sección anterior).
 git tag -a v1.1.0 -m "Versión 1.1.0 - Agregar página Somos y rediseño del footer"
 ```
 
-- **`-a v1.1.0`** — El nombre de la versión
-- **`-m "..."`** — Una descripción de qué incluye esta versión
+- `**-a v1.1.0**` — El nombre de la versión
+- `**-m "..."**` — Una descripción de qué incluye esta versión
 
 #### Paso 3: Subir el tag a GitHub
 
@@ -366,13 +376,13 @@ Los **Releases** son versiones que se muestran en una página especial de GitHub
 4. En **"Choose a tag"**, selecciona el tag que creaste (ejemplo: `v1.1.0`)
 5. En **"Release title"**, escribe el nombre de la versión: `v1.1.0 - Página Somos y Rediseño`
 6. En la descripción, escribe un resumen de los cambios:
-   ```
+  ```
    ## Cambios en esta versión
    - Agregada nueva página "Somos" (sobre nosotros)
    - Rediseño del footer con estilo tropical
    - Logos más grandes en navbar y footer
    - Corrección de contraste en links de navegación
-   ```
+  ```
 7. Haz clic en **"Publish release"**
 
 ---
@@ -525,44 +535,52 @@ git push origin --tags
 
 ### Comandos básicos
 
-| Comando | ¿Qué hace? |
-|---|---|
-| `git status` | Ver qué archivos cambiaron |
-| `git add .` | Preparar todos los archivos para guardar |
-| `git commit -m "mensaje"` | Guardar los cambios con una descripción |
-| `git push` | Subir los cambios a GitHub |
-| `git pull` | Descargar cambios desde GitHub a tu computadora |
-| `git log --oneline` | Ver historial de cambios (resumido) |
-| `git log` | Ver historial de cambios (detallado) |
+
+| Comando                   | ¿Qué hace?                                      |
+| ------------------------- | ----------------------------------------------- |
+| `git status`              | Ver qué archivos cambiaron                      |
+| `git add .`               | Preparar todos los archivos para guardar        |
+| `git commit -m "mensaje"` | Guardar los cambios con una descripción         |
+| `git push`                | Subir los cambios a GitHub                      |
+| `git pull`                | Descargar cambios desde GitHub a tu computadora |
+| `git log --oneline`       | Ver historial de cambios (resumido)             |
+| `git log`                 | Ver historial de cambios (detallado)            |
+
 
 ### Comandos de versiones (tags)
 
-| Comando | ¿Qué hace? |
-|---|---|
-| `git tag` | Ver todas las versiones |
-| `git tag -a v1.0.0 -m "desc"` | Crear nueva versión |
-| `git push origin --tags` | Subir versiones a GitHub |
-| `git show v1.0.0` | Ver detalles de una versión |
-| `git checkout v1.0.0` | Ir temporalmente a una versión anterior |
-| `git checkout main` | Volver a la versión actual |
+
+| Comando                       | ¿Qué hace?                              |
+| ----------------------------- | --------------------------------------- |
+| `git tag`                     | Ver todas las versiones                 |
+| `git tag -a v1.0.0 -m "desc"` | Crear nueva versión                     |
+| `git push origin --tags`      | Subir versiones a GitHub                |
+| `git show v1.0.0`             | Ver detalles de una versión             |
+| `git checkout v1.0.0`         | Ir temporalmente a una versión anterior |
+| `git checkout main`           | Volver a la versión actual              |
+
 
 ### Comandos de ramas
 
-| Comando | ¿Qué hace? |
-|---|---|
-| `git branch` | Ver todas las ramas |
+
+| Comando                  | ¿Qué hace?                        |
+| ------------------------ | --------------------------------- |
+| `git branch`             | Ver todas las ramas               |
 | `git checkout -b nombre` | Crear nueva rama y cambiar a ella |
-| `git checkout main` | Cambiar a la rama principal |
-| `git merge nombre-rama` | Unir una rama a la actual |
-| `git branch -d nombre` | Eliminar una rama local |
+| `git checkout main`      | Cambiar a la rama principal       |
+| `git merge nombre-rama`  | Unir una rama a la actual         |
+| `git branch -d nombre`   | Eliminar una rama local           |
+
 
 ### Comandos de información
 
-| Comando | ¿Qué hace? |
-|---|---|
-| `git diff` | Ver exactamente qué líneas cambiaron |
-| `git log --oneline --graph` | Ver historial con gráfico de ramas |
-| `git remote -v` | Ver a qué repositorio de GitHub está conectado |
+
+| Comando                     | ¿Qué hace?                                     |
+| --------------------------- | ---------------------------------------------- |
+| `git diff`                  | Ver exactamente qué líneas cambiaron           |
+| `git log --oneline --graph` | Ver historial con gráfico de ramas             |
+| `git remote -v`             | Ver a qué repositorio de GitHub está conectado |
+
 
 ---
 
@@ -650,10 +668,13 @@ git checkout -- .
 
 Para referencia, aquí tienes un historial sugerido basado en el desarrollo que ya se ha hecho:
 
-| Versión | Descripción |
-|---|---|
+
+| Versión  | Descripción                                           |
+| -------- | ----------------------------------------------------- |
 | `v1.0.0` | Sitio web inicial con examen, matrícula y panel admin |
-| `v1.1.0` | Integración con Supabase y Stripe |
-| `v1.2.0` | Rediseño visual tropical con animaciones |
-| `v1.2.1` | Correcciones de contraste y tamaño de logos |
-| `v1.3.0` | GitHub Action para mantener Supabase activo |
+| `v1.1.0` | Integración con Supabase y Stripe                     |
+| `v1.2.0` | Rediseño visual tropical con animaciones              |
+| `v1.2.1` | Correcciones de contraste y tamaño de logos           |
+| `v1.3.0` | GitHub Action para mantener Supabase activo           |
+
+

@@ -1,4 +1,5 @@
 # Americas Boating Club - Boqueron Power Squadron
+
 ## Sistema de Certificacion de Navegacion - Ley 430 PR
 
 Sitio web completo para la certificacion oficial de navegantes bajo la Ley 430 de Puerto Rico.
@@ -19,34 +20,39 @@ Incluye base de datos Supabase, pagos con Stripe, examen de practica, examen ofi
 
 ## Requisitos Previos
 
-1. **Node.js** (version 18 o superior) - https://nodejs.org/
+1. **Node.js** (version 18 o superior) - [https://nodejs.org/](https://nodejs.org/)
 2. **npm** (viene incluido con Node.js)
-3. **Cuenta de Supabase** (gratis) - https://supabase.com
-4. **Cuenta de Stripe** (para pagos) - https://stripe.com
+3. **Cuenta de Supabase** (gratis) - [https://supabase.com](https://supabase.com)
+4. **Cuenta de Stripe** (para pagos) - [https://stripe.com](https://stripe.com)
 
 ---
 
 ## Instalacion y Configuracion
 
 ### 1. Instalar dependencias
+
 ```bash
 cd /Users/ramonsuarez/Desktop/BPS/bps-website
 npm install
 ```
 
 ### 2. Configurar Supabase
-1. Crea un proyecto en https://supabase.com
+
+1. Crea un proyecto en [https://supabase.com](https://supabase.com)
 2. Ve al "SQL Editor" y ejecuta `supabase/schema.sql` (crea las tablas)
 3. Ejecuta `supabase/seed-questions.sql` (carga las 85 preguntas)
 4. Ve a Settings > API y copia las claves
 
 ### 3. Configurar Stripe
-1. Crea una cuenta en https://stripe.com
+
+1. Crea una cuenta en [https://stripe.com](https://stripe.com)
 2. Ve a Developers > API Keys y copia la clave secreta
 3. Configura un webhook apuntando a `/api/stripe/webhook` con el evento `checkout.session.completed`
 
 ### 4. Crear archivo de variables de entorno
+
 Copia `.env.local.example` a `.env.local` y llena los valores:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anon
@@ -57,11 +63,12 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### 5. Iniciar el servidor
+
 ```bash
 npm run dev
 ```
 
-Abre http://localhost:3000 en tu navegador.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ---
 
@@ -127,12 +134,14 @@ bps-website/
 
 ### Tablas
 
-| Tabla | Descripcion |
-|-------|-------------|
-| `exam_questions` | 85 preguntas con opciones, respuesta correcta y pista |
-| `registrations` | Matriculas con datos personales, pago y estado |
-| `exam_attempts` | Intentos de examen (practica y oficial) |
-| `exam_attempt_answers` | Respuesta individual de cada pregunta |
+
+| Tabla                  | Descripcion                                           |
+| ---------------------- | ----------------------------------------------------- |
+| `exam_questions`       | 85 preguntas con opciones, respuesta correcta y pista |
+| `registrations`        | Matriculas con datos personales, pago y estado        |
+| `exam_attempts`        | Intentos de examen (practica y oficial)               |
+| `exam_attempt_answers` | Respuesta individual de cada pregunta                 |
+
 
 ---
 
@@ -163,31 +172,37 @@ bps-website/
 
 ## Personalizacion
 
-| Que cambiar | Donde editarlo |
-|-------------|----------------|
-| Colores del tema | `tailwind.config.ts` |
-| Textos de la pagina principal | `app/page.tsx` |
-| Preguntas del examen | `data/examQuestions.ts` + tabla `exam_questions` en Supabase |
-| Precio del curso | `app/api/stripe/checkout/route.ts` y `app/matricula/page.tsx` |
-| Informacion de contacto | `components/Footer.tsx` |
-| Logo | Reemplazar `public/images/bps-logo.png` |
+
+| Que cambiar                   | Donde editarlo                                                |
+| ----------------------------- | ------------------------------------------------------------- |
+| Colores del tema              | `tailwind.config.ts`                                          |
+| Textos de la pagina principal | `app/page.tsx`                                                |
+| Preguntas del examen          | `data/examQuestions.ts` + tabla `exam_questions` en Supabase  |
+| Precio del curso              | `app/api/stripe/checkout/route.ts` y `app/matricula/page.tsx` |
+| Informacion de contacto       | `components/Footer.tsx`                                       |
+| Logo                          | Reemplazar `public/images/bps-logo.png`                       |
+
 
 ---
 
 ## Solucion de Problemas
 
 ### "command not found: npm"
-Node.js no esta instalado. Ve a https://nodejs.org/ e instala la version LTS.
+
+Node.js no esta instalado. Ve a [https://nodejs.org/](https://nodejs.org/) e instala la version LTS.
 
 ### "supabaseUrl is required"
+
 Falta el archivo `.env.local`. Copia `.env.local.example` a `.env.local` y llena los valores.
 
 ### "Port 3000 is already in use"
+
 ```bash
 npm run dev -- --port 3001
 ```
 
 ### Errores al construir (npm run build)
+
 ```bash
 rm -rf node_modules .next
 npm install

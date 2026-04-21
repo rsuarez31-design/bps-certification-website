@@ -1,4 +1,5 @@
 # 🚀 DEPLOYMENT GUIDE - BPS Website
+
 ## How to Publish Your Website Online
 
 ---
@@ -6,6 +7,7 @@
 ## 🌟 **RECOMMENDED: VERCEL (FREE & EASIEST)**
 
 Vercel is the best option for Next.js projects. It's:
+
 - ✅ **100% FREE** for personal projects
 - ✅ **Deploy in 5 minutes**
 - ✅ **Automatic HTTPS/SSL**
@@ -39,14 +41,14 @@ git commit -m "Initial commit - BPS Certification Website"
 
 #### 1.2 Create GitHub Account & Repository
 
-1. Go to: **https://github.com**
+1. Go to: **[https://github.com](https://github.com)**
 2. Click **"Sign up"** (if you don't have an account)
 3. Click **"New repository"** (+ button, top right)
 4. Configure:
-   - **Name:** `bps-certification-website`
-   - **Description:** "Navigation Certification System - Puerto Rico Law 430"
-   - **Visibility:** Private or Public (your choice)
-   - ❌ **Don't check** "Add a README file"
+  - **Name:** `bps-certification-website`
+  - **Description:** "Navigation Certification System - Puerto Rico Law 430"
+  - **Visibility:** Private or Public (your choice)
+  - ❌ **Don't check** "Add a README file"
 5. Click **"Create repository"**
 
 #### 1.3 Connect Local Project to GitHub
@@ -69,9 +71,11 @@ git push -u origin main
 ### **STEP 2: Deploy to Vercel (3 minutes)**
 
 #### 2.1 Go to Vercel
-Visit: **https://vercel.com**
+
+Visit: **[https://vercel.com](https://vercel.com)**
 
 #### 2.2 Sign Up
+
 - Click **"Sign Up"**
 - Select **"Continue with GitHub"**
 - Authorize Vercel
@@ -82,9 +86,9 @@ Visit: **https://vercel.com**
 2. Find your repository: `bps-certification-website`
 3. Click **"Import"**
 4. Configure (leave defaults):
-   - Framework: Next.js ✅
-   - Build Command: `npm run build` ✅
-   - Output Directory: `.next` ✅
+  - Framework: Next.js ✅
+  - Build Command: `npm run build` ✅
+  - Output Directory: `.next` ✅
 5. Click **"Deploy"**
 
 #### 2.4 Wait for Deployment (1-2 minutes)
@@ -94,6 +98,7 @@ Vercel will build and deploy automatically.
 #### 2.5 Your Site is LIVE! 🎉
 
 You'll get a URL like:
+
 ```
 https://bps-certification-website.vercel.app
 ```
@@ -105,11 +110,13 @@ https://bps-certification-website.vercel.app
 ### **STEP 3: Access Your Live Site**
 
 Your website is now online at:
+
 ```
 https://your-project.vercel.app
 ```
 
 Share this link with:
+
 - ✅ Students
 - ✅ Instructors
 - ✅ Club members
@@ -139,6 +146,7 @@ Vercel detects changes and updates your live site automatically!
 ## 🎨 **CUSTOM DOMAIN (OPTIONAL)**
 
 ### **Option 1: Use Free Vercel Domain**
+
 Already included: `your-project.vercel.app`
 
 ### **Option 2: Use Your Own Domain**
@@ -146,14 +154,13 @@ Already included: `your-project.vercel.app`
 If you own a domain (e.g., boqueronpowersquadron.com):
 
 1. **In Vercel Dashboard:**
-   - Go to your project
-   - Click **"Settings"**
-   - Click **"Domains"**
-   - Add your custom domain
-
+  - Go to your project
+  - Click **"Settings"**
+  - Click **"Domains"**
+  - Add your custom domain
 2. **In Your Domain Provider:**
-   - Add the DNS records Vercel provides
-   - Wait 24-48 hours for propagation
+  - Add the DNS records Vercel provides
+  - Wait 24-48 hours for propagation
 
 ---
 
@@ -161,7 +168,7 @@ If you own a domain (e.g., boqueronpowersquadron.com):
 
 ### **Add Google Analytics:**
 
-1. Create account at: https://analytics.google.com
+1. Create account at: [https://analytics.google.com](https://analytics.google.com)
 2. Get your tracking ID
 3. Add to your site (I can help with this)
 
@@ -172,12 +179,16 @@ If you own a domain (e.g., boqueronpowersquadron.com):
 Before using with real students:
 
 ### **1. Set Up Real Database:**
+
 Currently using localStorage (browser storage). For production:
+
 - Use PostgreSQL, MongoDB, or Firebase
 - Store student data securely
 
 ### **2. Secure Authentication:**
+
 Currently has hardcoded credentials (BPS/2026). For production:
+
 - Use NextAuth.js or similar
 - Use environment variables
 - Hash passwords
@@ -185,6 +196,7 @@ Currently has hardcoded credentials (BPS/2026). For production:
 ### **3. Environment Variables in Vercel:**
 
 In Vercel Dashboard:
+
 - Settings → Environment Variables
 - Add sensitive data:
   ```
@@ -198,16 +210,19 @@ In Vercel Dashboard:
 ## 🛠️ **OTHER HOSTING OPTIONS**
 
 ### **Netlify** (Also Free & Easy)
+
 - Similar to Vercel
 - Good alternative
-- https://netlify.com
+- [https://netlify.com](https://netlify.com)
 
 ### **Railway** (Free Tier)
+
 - Includes database
 - Good for full-stack apps
-- https://railway.app
+- [https://railway.app](https://railway.app)
 
 ### **AWS/Google Cloud** (Advanced)
+
 - More control
 - Requires technical knowledge
 - Can have costs
@@ -217,26 +232,29 @@ In Vercel Dashboard:
 ## 🔧 **TROUBLESHOOTING**
 
 ### **Build Failed Error**
+
 1. Test locally first:
-   ```bash
+  ```bash
    npm run build
-   ```
+  ```
 2. Fix any errors
 3. Push to GitHub
 4. Vercel will retry automatically
 
 ### **Site is Blank**
+
 1. Open browser console (F12)
 2. Look for errors
 3. Usually image paths or API issues
 
 ### **"Cannot find module" Error**
+
 1. Verify all dependencies are in `package.json`
 2. Delete and reinstall:
-   ```bash
+  ```bash
    rm -rf node_modules
    npm install
-   ```
+  ```
 
 ---
 
@@ -244,18 +262,19 @@ In Vercel Dashboard:
 
 Before deploying, verify:
 
-- [ ] Project works locally (`npm run dev`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] All images are in `public/` folder
-- [ ] No sensitive data in code
-- [ ] `.gitignore` is configured
-- [ ] All pages tested locally
+- Project works locally (`npm run dev`)
+- Build succeeds (`npm run build`)
+- All images are in `public/` folder
+- No sensitive data in code
+- `.gitignore` is configured
+- All pages tested locally
 
 ---
 
 ## 🎯 **QUICK REFERENCE**
 
 ### **Initial Deployment:**
+
 ```bash
 # 1. Git Setup
 git init
@@ -270,6 +289,7 @@ git push -u origin main
 ```
 
 ### **Updates:**
+
 ```bash
 git add .
 git commit -m "Update: description"
@@ -282,9 +302,9 @@ Vercel auto-deploys! ✨
 
 ## 📞 **USEFUL RESOURCES**
 
-- **Vercel Docs:** https://vercel.com/docs
-- **Next.js Deployment:** https://nextjs.org/docs/deployment
-- **GitHub Guides:** https://guides.github.com/
+- **Vercel Docs:** [https://vercel.com/docs](https://vercel.com/docs)
+- **Next.js Deployment:** [https://nextjs.org/docs/deployment](https://nextjs.org/docs/deployment)
+- **GitHub Guides:** [https://guides.github.com/](https://guides.github.com/)
 
 ---
 
@@ -293,11 +313,13 @@ Vercel auto-deploys! ✨
 Once deployed, your site will be accessible from anywhere in the world!
 
 **Your URL will be:**
+
 ```
 https://your-project-name.vercel.app
 ```
 
 **Access from:**
+
 - ✅ Any computer
 - ✅ Mobile phones
 - ✅ Tablets

@@ -6,11 +6,13 @@ Esta guía explica cómo usar la regla automática de Cursor para subir (push) l
 
 ## Información del Repositorio
 
-| Dato | Valor |
-|------|-------|
-| **Repositorio** | https://github.com/rsuarez31-design/bps-certification-website |
-| **Branch** | `main` |
-| **Carpeta del proyecto** | `/Users/ramonsuarez/Desktop/BPS/bps-website` |
+
+| Dato                     | Valor                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Repositorio**          | [https://github.com/rsuarez31-design/bps-certification-website](https://github.com/rsuarez31-design/bps-certification-website) |
+| **Branch**               | `main`                                                                                                                         |
+| **Carpeta del proyecto** | `/Users/ramonsuarez/Desktop/BPS/bps-website`                                                                                   |
+
 
 ---
 
@@ -59,6 +61,7 @@ Publica la versión actual en GitHub
 ### Paso 4: Cursor ejecutará automáticamente
 
 Cursor va a:
+
 1. **Compilar el proyecto** → Si hay errores, te los mostrará y los corregirá antes de continuar
 2. **Revisar los cambios** → Te mostrará un resumen de qué archivos se modificaron
 3. **Crear el commit** → Con un mensaje descriptivo en español
@@ -71,6 +74,7 @@ Cursor va a:
 Cursor te mostrará una pregunta como esta:
 
 > **¿Confirmas que deseas subir estos cambios a GitHub?**
+>
 > - Sí, subir a GitHub
 > - No, cancelar
 
@@ -80,7 +84,7 @@ Cursor te mostrará una pregunta como esta:
 ### Paso 5: Verifica en GitHub
 
 Puedes abrir tu navegador e ir a:
-**https://github.com/rsuarez31-design/bps-certification-website**
+**[https://github.com/rsuarez31-design/bps-certification-website](https://github.com/rsuarez31-design/bps-certification-website)**
 
 Ahí verás todos tus cambios publicados.
 
@@ -123,6 +127,7 @@ Cursor te avisará que hay cambios en el repositorio que no tienes localmente. T
 ### ¿Se suben mis contraseñas o claves secretas?
 
 **No.** El proyecto tiene un archivo `.gitignore` que automáticamente excluye:
+
 - `.env.local` (donde están tus claves de Supabase, Stripe, etc.)
 - `node_modules/` (las librerías instaladas)
 - `.next/` (los archivos de compilación)
@@ -151,12 +156,14 @@ Para más detalles sobre versiones, revisa el archivo `GUIA_GITHUB_Y_VERSIONES.m
 
 ## Archivos Importantes
 
-| Archivo | Qué hace |
-|---------|----------|
-| `.cursor/rules/deploy-to-github.mdc` | La regla automática que Cursor sigue para hacer el deploy |
-| `.gitignore` | Lista de archivos que git **nunca** debe subir (secretos, node_modules, etc.) |
-| `GUIA_GITHUB_Y_VERSIONES.md` | Guía completa sobre git, versiones y branches |
-| `GUIA_GITHUB_ACTION_SUPABASE.md` | Guía del job automático que mantiene Supabase activo |
+
+| Archivo                              | Qué hace                                                                      |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| `.cursor/rules/deploy-to-github.mdc` | La regla automática que Cursor sigue para hacer el deploy                     |
+| `.gitignore`                         | Lista de archivos que git **nunca** debe subir (secretos, node_modules, etc.) |
+| `GUIA_GITHUB_Y_VERSIONES.md`         | Guía completa sobre git, versiones y branches                                 |
+| `GUIA_GITHUB_ACTION_SUPABASE.md`     | Guía del job automático que mantiene Supabase activo                          |
+
 
 ---
 
