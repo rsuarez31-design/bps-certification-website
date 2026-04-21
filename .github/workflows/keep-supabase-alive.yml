@@ -1,0 +1,117 @@
+# =============================================================
+# KEEP SUPABASE ALIVE - Mantener Supabase Activo
+#
+# Este workflow hace una consulta ligera a la base de datos
+# de Supabase cada 3 dias para evitar que el proyecto se pause
+# por inactividad (el plan gratuito de Supabase pausa proyectos
+# despues de 7 dias sin actividad).
+#
+# CONFIGURACION REQUERIDA (una sola vez):
+#   GitHub -> Settings -> Secrets and variables -> Actions
+#   Agregar estos dos secretos:
+#     1. SUPABASE_URL       -> URL del proyecto (https://xxxxx.supabase.co)
+#     2. SUPABASE_ANON_KEY  -> Anon public key (texto largo que empieza con eyJ)
+#
+# FRECUENCIA:
+#   "0 8 */3 * *" = todos los dias del mes divisibles por 3, a las 8:00 UTC
+#   Resultado: aproximadamente 10 ejecuciones al mes con gap maximo de 3 dias.
+# =============================================================
+
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    - cron: '0 8 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-supabase-alive
+  cancel-in-progress: false
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validar que los secretos esten configurados
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ]; then
+            echo "::error::El secreto SUPABASE_URL no esta configurado."
+            echo "Agregar en GitHub -> Settings -> Secrets and variables -> Actions"
+            exit 1
+          fi
+
+          if [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::error::El secreto SUPABASE_ANON_KEY no esta configurado."
+            echo "Agregar en GitHub -> Settings -> Secrets and variables -> Actions"
+            exit 1
+          fi
+
+          if [[ ! "$SUPABASE_URL" =~ ^https://[a-z0-9.-]+\.supabase\.co/?$ ]]; then
+            echo "::error::SUPABASE_URL no tiene el formato esperado."
+            echo "Debe ser algo como: https://xxxxxxxxxxxx.supabase.co"
+            exit 1
+          fi
+
+          echo "Secretos validados correctamente."
+
+      - name: Consultar Supabase (con reintentos)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          BASE_URL="${SUPABASE_URL%/}"
+          ENDPOINT="$BASE_URL/rest/v1/exam_questions?select=id&limit=1"
+
+          MAX_ATTEMPTS=3
+          WAIT_SECONDS=10
+
+          for attempt in $(seq 1 $MAX_ATTEMPTS); do
+            echo ""
+            echo "Intento $attempt de $MAX_ATTEMPTS ..."
+
+            BODY_FILE=$(mktemp)
+            HTTP_CODE=$(curl -sS \
+              --connect-timeout 15 \
+              --max-time 30 \
+              -o "$BODY_FILE" \
+              -w "%{http_code}" \
+              "$ENDPOINT" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              -H "Accept: application/json" || echo "000")
+
+            BODY_PREVIEW=$(head -c 120 "$BODY_FILE" || true)
+            rm -f "$BODY_FILE"
+
+            echo "  HTTP: $HTTP_CODE"
+            echo "  Body: $BODY_PREVIEW"
+
+            if [ "$HTTP_CODE" = "200" ] && [[ "$BODY_PREVIEW" == \[* ]]; then
+              echo ""
+              echo "Supabase respondio 200 con JSON valido. Proyecto activo."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+              echo "  Respuesta inesperada. Reintentando en ${WAIT_SECONDS}s..."
+              sleep $WAIT_SECONDS
+              WAIT_SECONDS=$((WAIT_SECONDS * 3))
+            fi
+          done
+
+          echo ""
+          echo "::error::Supabase no respondio correctamente despues de $MAX_ATTEMPTS intentos."
+          exit 1
