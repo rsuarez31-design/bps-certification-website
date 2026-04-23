@@ -15,7 +15,7 @@ Un sitio web completo con base de datos Supabase, pagos con Stripe, examen de pr
 ## ESTRUCTURA COMPLETA DE ARCHIVOS
 
 ```
-bps-website/
+BPS/                              (raiz del proyecto)
 ├── Archivos de Configuracion
 │   ├── package.json              <- Dependencias del proyecto (incluye Supabase y Stripe)
 │   ├── tsconfig.json             <- Configuracion de TypeScript

@@ -45,7 +45,7 @@
   - Escribe "Terminal" y presiona Enter
 2. **Ir al directorio del proyecto:**
   ```bash
-   cd /Users/ramonsuarez/Desktop/BPS/bps-website
+   cd /Users/ramonsuarez/Desktop/BPS
   ```
 3. **Instalar dependencias (solo la primera vez):**
   ```bash

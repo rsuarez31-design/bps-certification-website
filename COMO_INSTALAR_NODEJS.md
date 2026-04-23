@@ -143,7 +143,7 @@ Si aún no funciona:
 1. **Abre Terminal**
 2. **Ve al directorio del proyecto:**
   ```bash
-   cd /Users/ramonsuarez/Desktop/BPS/bps-website
+   cd /Users/ramonsuarez/Desktop/BPS
   ```
 3. **Instala las dependencias:**
   ```bash
@@ -255,7 +255,7 @@ Sistema de Certificación de Navegación - Ley 430 PR
 Ubicación del proyecto:
 
 ```
-/Users/ramonsuarez/Desktop/BPS/bps-website
+/Users/ramonsuarez/Desktop/BPS
 ```
 
 ---

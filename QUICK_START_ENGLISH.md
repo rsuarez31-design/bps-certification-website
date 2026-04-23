@@ -10,7 +10,7 @@
 
 ```bash
 # Go to your project
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 
 # Initialize Git (if not done)
 git init

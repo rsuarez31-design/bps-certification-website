@@ -27,7 +27,7 @@ Open Terminal and run:
 
 ```bash
 # Navigate to your project
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 
 # Initialize Git
 git init

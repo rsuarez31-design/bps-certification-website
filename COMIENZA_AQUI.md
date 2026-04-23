@@ -36,8 +36,8 @@ Antes de ejecutar el proyecto, necesitas crear cuentas en dos servicios:
 
 1. Ve a [https://supabase.com](https://supabase.com) y crea una cuenta gratuita
 2. Crea un nuevo proyecto
-3. Ve al "SQL Editor" y ejecuta el archivo `bps-website/supabase/schema.sql`
-4. Luego ejecuta `bps-website/supabase/migracion-v4-banco-75.sql` (carga las 75 preguntas vigentes, anade la columna `image_url` y crea el bucket `exam-images`)
+3. Ve al "SQL Editor" y ejecuta el archivo `supabase/schema.sql`
+4. Luego ejecuta `supabase/migracion-v4-banco-75.sql` (carga las 75 preguntas vigentes, anade la columna `image_url` y crea el bucket `exam-images`)
 5. Ve a Settings > API y copia:
   - La URL del proyecto
   - La clave "anon public"
@@ -53,7 +53,7 @@ Antes de ejecutar el proyecto, necesitas crear cuentas en dos servicios:
 
 #### C) Crear archivo de variables de entorno
 
-1. Ve a la carpeta `bps-website/`
+1. Ve a la carpeta raiz del proyecto (`/Users/ramonsuarez/Desktop/BPS`)
 2. Copia el archivo `.env.local.example` y renombralo a `.env.local`
 3. Abre `.env.local` y pega tus claves de Supabase y Stripe
 
@@ -69,7 +69,7 @@ Antes de ejecutar el proyecto, necesitas crear cuentas en dos servicios:
 
 ```bash
 # Ir al directorio del proyecto
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 
 # Instalar dependencias (solo primera vez, tarda 2-3 minutos)
 npm install
@@ -90,7 +90,7 @@ Lee estos archivos en este orden:
 
 ### 1. PRIMERO - Instrucciones Rapidas
 
-Archivo: `bps-website/INSTRUCCIONES_RAPIDAS.md`
+Archivo: `INSTRUCCIONES_RAPIDAS.md`
 
 - Guia rapida para ejecutar el proyecto
 - Solucion de problemas comunes
@@ -105,7 +105,7 @@ Archivo: `RESUMEN_DEL_PROYECTO.md`
 
 ### 3. TERCERO - Documentacion Completa
 
-Archivo: `bps-website/README.md`
+Archivo: `README.md`
 
 - Documentacion tecnica completa
 - Guias de personalizacion
@@ -256,29 +256,29 @@ Una vez que el sitio este corriendo, puedes visitar:
 
 ### Cambiar Colores:
 
-Edita: `bps-website/tailwind.config.ts`
+Edita: `tailwind.config.ts`
 
 ### Cambiar Textos de la Pagina Principal:
 
-Edita: `bps-website/app/page.tsx`
+Edita: `app/page.tsx`
 
 ### Agregar/Modificar Preguntas:
 
-1. Edita `bps-website/data/examQuestions.ts` (para el codigo)
+1. Edita `data/examQuestions.ts` (para el codigo)
 2. Actualiza la tabla `exam_questions` en Supabase (para la base de datos)
 
 ### Cambiar Logo:
 
-Reemplaza: `bps-website/public/images/bps-logo.png`
+Reemplaza: `public/images/bps-logo.png`
 
 ### Cambiar Contacto:
 
-Edita: `bps-website/components/Footer.tsx`
+Edita: `components/Footer.tsx`
 
 ### Cambiar Precio del Curso:
 
-Edita: `bps-website/app/api/stripe/checkout/route.ts` (busca `unit_amount`)
-Edita: `bps-website/app/matricula/page.tsx` (busca los textos de precio)
+Edita: `app/api/stripe/checkout/route.ts` (busca `unit_amount`)
+Edita: `app/matricula/page.tsx` (busca los textos de precio)
 
 ---
 
@@ -326,7 +326,7 @@ npm install
 **Ubicacion del Proyecto:**
 
 ```
-/Users/ramonsuarez/Desktop/BPS/bps-website
+/Users/ramonsuarez/Desktop/BPS
 ```
 
 **Credenciales Admin:**
@@ -344,7 +344,7 @@ npm install
 ## PARA COMENZAR
 
 ```bash
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 npm install
 npm run dev
 ```

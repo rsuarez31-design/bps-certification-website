@@ -91,7 +91,7 @@ Un **repositorio** (o "repo") es como una carpeta en GitHub donde vive tu proyec
 1. Inicia sesión en [github.com](https://github.com)
 2. En la esquina superior derecha, haz clic en el **"+"** y selecciona **"New repository"**
 3. Completa los campos:
-  - **Repository name**: `bps-website` (o el nombre que prefieras)
+  - **Repository name**: `bps-certification-website` (o el nombre que prefieras)
   - **Description**: `Sitio web de Americas Boating Club - Boquerón Power Squadron`
   - **Visibilidad**: Elige **Private** (privado) si no quieres que sea público
   - **NO** marques ninguna de las casillas de abajo (no inicialices con README ni .gitignore, ya los tenemos)
@@ -121,7 +121,7 @@ Esto le dice a Git: "Empieza a rastrear los cambios en esta carpeta". Solo se ha
 
 ### 4.3 Crear el archivo .gitignore principal
 
-Tu proyecto ya tiene un `.gitignore` dentro de `bps-website/`, pero necesitamos uno en la raíz para proteger archivos sensibles de todo el proyecto:
+Tu proyecto ya tiene un `.gitignore` en la raíz del repositorio. Si por alguna razón no lo tiene, crealo:
 
 ```bash
 cat > .gitignore << 'EOF'
@@ -193,7 +193,7 @@ Esto marca este punto exacto como la **versión 1.0.0**. Más adelante explicamo
 Reemplaza `TU-USUARIO` con tu nombre de usuario de GitHub:
 
 ```bash
-git remote add origin https://github.com/TU-USUARIO/bps-website.git
+git remote add origin https://github.com/TU-USUARIO/bps-certification-website.git
 git branch -M main
 git push -u origin main
 git push origin --tags
@@ -237,7 +237,7 @@ git add .
 Para preparar un archivo específico:
 
 ```bash
-git add bps-website/app/page.tsx
+git add app/page.tsx
 ```
 
 ### Paso 3: Guardar los cambios (hacer commit)
@@ -371,7 +371,7 @@ git checkout main
 Los **Releases** son versiones que se muestran en una página especial de GitHub con descripción, notas y archivos descargables.
 
 1. Ve a tu repositorio en GitHub
-2. En la barra lateral derecha, haz clic en **"Releases"** (o ve a `https://github.com/TU-USUARIO/bps-website/releases`)
+2. En la barra lateral derecha, haz clic en **"Releases"** (o ve a `https://github.com/TU-USUARIO/bps-certification-website/releases`)
 3. Haz clic en **"Create a new release"**
 4. En **"Choose a tag"**, selecciona el tag que creaste (ejemplo: `v1.1.0`)
 5. En **"Release title"**, escribe el nombre de la versión: `v1.1.0 - Página Somos y Rediseño`

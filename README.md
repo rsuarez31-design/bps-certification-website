@@ -32,7 +32,7 @@ Incluye base de datos Supabase, pagos con Stripe, examen de practica, examen ofi
 ### 1. Instalar dependencias
 
 ```bash
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 npm install
 ```
 
@@ -75,7 +75,7 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ## Estructura del Proyecto
 
 ```
-bps-website/
+BPS/                                   # Raiz del proyecto
 ├── app/                              # Paginas y rutas de API
 │   ├── page.tsx                      # Pagina principal
 │   ├── layout.tsx                    # Layout con Navbar y Footer

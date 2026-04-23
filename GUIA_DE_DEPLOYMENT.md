@@ -45,7 +45,7 @@ Asegurate de tener tus claves:
 ### 3. Verificar que todo funciona localmente
 
 ```bash
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 npm run build
 ```
 
@@ -70,7 +70,7 @@ Si no lo tienes, instalalo:
 Inicializa Git en tu proyecto:
 
 ```bash
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 
 git init
 git add .
@@ -118,7 +118,7 @@ En la seccion "Environment Variables", agrega TODAS estas:
 | `SUPABASE_SERVICE_ROLE_KEY`     | Clave de servicio de Supabase                                                                    |
 | `STRIPE_SECRET_KEY`             | Clave secreta de Stripe                                                                          |
 | `STRIPE_WEBHOOK_SECRET`         | Secreto del webhook de Stripe                                                                    |
-| `NEXT_PUBLIC_SITE_URL`          | URL de tu sitio en Vercel (ej: [https://bps-website.vercel.app](https://bps-website.vercel.app)) |
+| `NEXT_PUBLIC_SITE_URL`          | URL de tu sitio en Vercel (ej: [https://bps-certification-website.vercel.app](https://bps-certification-website.vercel.app)) |
 
 
 1. Haz clic en "Deploy"
@@ -279,7 +279,7 @@ Usa cualquier fecha futura y cualquier CVC de 3 digitos.
 
 ```bash
 # 1. Preparar Git
-cd /Users/ramonsuarez/Desktop/BPS/bps-website
+cd /Users/ramonsuarez/Desktop/BPS
 git init && git add . && git commit -m "Initial commit"
 
 # 2. Crear repo en GitHub (hazlo en github.com)

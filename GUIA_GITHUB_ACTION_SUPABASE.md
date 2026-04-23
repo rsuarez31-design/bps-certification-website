@@ -32,7 +32,7 @@ La versión anterior **nunca llegó a ejecutarse** porque faltaban los dos secre
 .github/workflows/keep-supabase-alive.yml
 ```
 
-**Solo existe una copia** (la duplicación en `bps-website/.github/workflows/` fue eliminada para evitar confusión).
+**Solo existe una copia** en la raíz del proyecto (la carpeta anidada `bps-website/` fue consolidada con la raíz el 2026-04-23, por lo que ya no existe).
 
 ### A.3 — Agregar los dos secretos en GitHub (**PASO CRÍTICO**)
 
@@ -84,7 +84,7 @@ Esta capa vive dentro de la propia base de datos: crea un job en Postgres (usand
 ### B.1 — Archivo
 
 ```
-bps-website/supabase/keep-alive-pg-cron.sql
+supabase/keep-alive-pg-cron.sql
 ```
 
 ### B.2 — Cómo ejecutarlo (una sola vez)
@@ -92,7 +92,7 @@ bps-website/supabase/keep-alive-pg-cron.sql
 1. Abre tu dashboard de Supabase: `https://supabase.com/dashboard` → selecciona tu proyecto.
 2. En el menú lateral izquierdo → **SQL Editor**.
 3. Haz clic en **New query**.
-4. Abre el archivo `bps-website/supabase/keep-alive-pg-cron.sql` en tu editor, copia **todo** su contenido y pégalo en el SQL Editor.
+4. Abre el archivo `supabase/keep-alive-pg-cron.sql` en tu editor, copia **todo** su contenido y pégalo en el SQL Editor.
 5. Haz clic en **Run** (o `Cmd+Enter`).
 6. Al final deberías ver una fila de resultado con:
   - `jobname = 'keep_alive_bps'`
@@ -218,7 +218,7 @@ SELECT cron.alter_job(
 | **Capa 1** — Archivo workflow          | `.github/workflows/keep-supabase-alive.yml`           |
 | **Capa 1** — Frecuencia                | Cada 3 días a las 8:00 UTC (~10 ejecuciones/mes)      |
 | **Capa 1** — Secretos requeridos       | `SUPABASE_URL` y `SUPABASE_ANON_KEY`                  |
-| **Capa 2** — Archivo SQL               | `bps-website/supabase/keep-alive-pg-cron.sql`         |
+| **Capa 2** — Archivo SQL               | `supabase/keep-alive-pg-cron.sql`                     |
 | **Capa 2** — Frecuencia                | Todos los días a las 07:17 UTC (~30 ejecuciones/mes)  |
 | **Capa 2** — Nombre del job            | `keep_alive_bps`                                      |
 | Costo                                  | Gratis                                                |

@@ -11,7 +11,7 @@ Esta guía explica cómo usar la regla automática de Cursor para subir (push) l
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Repositorio**          | [https://github.com/rsuarez31-design/bps-certification-website](https://github.com/rsuarez31-design/bps-certification-website) |
 | **Branch**               | `main`                                                                                                                         |
-| **Carpeta del proyecto** | `/Users/ramonsuarez/Desktop/BPS/bps-website`                                                                                   |
+| **Carpeta del proyecto** | `/Users/ramonsuarez/Desktop/BPS`                                                                                               |
 
 
 ---
