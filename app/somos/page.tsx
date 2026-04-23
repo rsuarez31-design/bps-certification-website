@@ -17,7 +17,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Somos | Americas Boating Club - Boquerón Power Squadron',
-  description: 'Conoce la historia, misión y valores de Americas Boating Club - Boquerón Power Squadron. Más de 50 años promoviendo la navegación segura en Puerto Rico.',
+  description: 'Conoce la historia, misión y valores de Americas Boating Club - Boquerón Power Squadron. Más de 30 años promoviendo la navegación segura en Puerto Rico.',
 };
 
 export default function SomosPage() {
@@ -52,7 +52,7 @@ export default function SomosPage() {
           </AnimatedSection>
           <AnimatedSection delay={0.2}>
             <p className="text-xl text-white/85 max-w-2xl mx-auto">
-              Más de 50 años promoviendo la navegación segura en las hermosas aguas de Puerto Rico
+              Más de 30 años promoviendo la navegación segura en las hermosas aguas de Puerto Rico
             </p>
           </AnimatedSection>
         </div>
@@ -110,7 +110,7 @@ export default function SomosPage() {
                 </div>
                 <div className="absolute -bottom-6 -right-6 bg-maritime-gold rounded-2xl p-4 shadow-xl">
                   <div className="text-center">
-                    <span className="text-3xl font-bold text-navy block">50+</span>
+                    <span className="text-3xl font-bold text-navy block">30+</span>
                     <span className="text-sm font-semibold text-navy/70">Años</span>
                   </div>
                 </div>
@@ -190,8 +190,8 @@ export default function SomosPage() {
         <div className="container-custom relative z-10 pt-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { value: 500, suffix: '+', label: 'Navegantes Certificados' },
-              { value: 50, suffix: '+', label: 'Años de Experiencia' },
+              { value: 3000, suffix: '+', label: 'Navegantes Certificados' },
+              { value: 30, suffix: '+', label: 'Años de Experiencia' },
               { value: 95, suffix: '%', label: 'Tasa de Aprobación' },
               { value: 75, suffix: '', label: 'Preguntas del Examen' },
             ].map((stat, idx) => (
