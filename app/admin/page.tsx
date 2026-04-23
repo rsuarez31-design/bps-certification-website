@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import {
   Lock, Users, AlertTriangle,
@@ -148,6 +148,23 @@ export default function AdminPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
 
+  // --- Cache por pestaña (lazy load + TTL / stale-while-revalidate) ---
+  //
+  // Motivacion: antes cada login o pulsacion de "Actualizar Datos" disparaba
+  // 4 queries pesadas (matriculas + exam_attempts + exam_attempt_answers +
+  // exam_questions) aunque el admin solo mirase una pestana. Con este cache:
+  //  - Al cambiar de pestana, solo cargamos si los datos estan "stale" (> TTL)
+  //  - Si hay datos previos, la recarga es "silent" (sin spinner bloqueante)
+  //  - Al cambiar filtros o pulsar "Actualizar Datos" forzamos bypass del TTL
+  type TabKey = 'registrations' | 'exams' | 'questions' | 'bank' | 'config';
+  const STALE_MS = 30_000;
+  const lastLoadedAt = useRef<Record<TabKey, number>>({
+    registrations: 0, exams: 0, questions: 0, bank: 0, config: 0,
+  });
+  const isStale = (k: TabKey) => Date.now() - lastLoadedAt.current[k] >= STALE_MS;
+  const markFresh = (k: TabKey) => { lastLoadedAt.current[k] = Date.now(); };
+  const markStale = (k: TabKey) => { lastLoadedAt.current[k] = 0; };
+
   // --- Login ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,8 +178,9 @@ export default function AdminPage() {
       const data = await response.json();
       if (data.authenticated) {
         setIsAuthenticated(true);
-        loadAllData();
-        loadConfig();
+        // El useEffect [isAuthenticated, activeTab] dispara la carga de la
+        // pestana activa inicial ('registrations'). No precargamos las otras
+        // pestanas: se cargaran la primera vez que el admin las abra.
       } else {
         setLoginError('Usuario o contraseña incorrectos');
       }
@@ -172,7 +190,12 @@ export default function AdminPage() {
   };
 
   // --- Cargar matrículas desde ruta API segura ---
-  const loadRegistrations = async () => {
+  //
+  // opts.silent = true -> no muestra spinner bloqueante (stale-while-revalidate
+  // al cambiar de pestana). La UI sigue mostrando los datos previos hasta que
+  // la nueva respuesta los sustituya.
+  const loadRegistrations = async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setIsLoading(true);
     setRegistrationsError(null);
     try {
       const params = new URLSearchParams();
@@ -198,49 +221,58 @@ export default function AdminPage() {
       } else {
         setRegistrations([]);
       }
+      markFresh('registrations');
     } catch (error) {
       console.error('Error al cargar matrículas:', error);
       setRegistrationsError('No se pudo conectar para cargar matrículas. Revisa tu red o vuelve a intentar.');
       setRegistrations([]);
+    } finally {
+      if (!opts.silent) setIsLoading(false);
     }
   };
 
-  // --- Cargar todos los datos ---
-  const loadAllData = async () => {
-    setIsLoading(true);
+  // --- Examen Oficial: cargar intentos ---
+  //
+  // SOLO intentos de tipo 'oficial'. El examen de practica no se persiste
+  // nunca (es anonimo y efimero), por lo que cualquier fila de 'practica'
+  // seria historica pre-migracion y de todos modos se borro en
+  // migracion-v4-banco-75.sql.
+  const loadExams = async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setIsLoading(true);
     try {
-      // Matrículas (via API segura)
-      await loadRegistrations();
-
-      // Examenes: SOLO intentos de tipo 'oficial'.
-      // El examen de practica no se persiste nunca (es anonimo y efimero),
-      // por lo que cualquier fila de 'practica' seria historica pre-migracion
-      // y de todos modos se borro en migracion-v4-banco-75.sql.
-      const { data: attempts } = await supabase
+      const { data: attempts, error } = await supabase
         .from('exam_attempts')
         .select('*')
         .eq('exam_type', 'oficial')
         .order('created_at', { ascending: false });
+      if (error) throw error;
+      setExamAttempts((attempts || []) as ExamAttempt[]);
+      markFresh('exams');
+    } catch (error) {
+      console.error('Error al cargar examenes:', error);
+    } finally {
+      if (!opts.silent) setIsLoading(false);
+    }
+  };
 
-      // Respuestas incorrectas para "preguntas mas falladas".
-      // Restringimos por inner-join a intentos oficiales: asi aunque
-      // quedaran respuestas historicas de practica, no contaminan el
-      // analisis pedagogico de las preguntas del examen real.
+  // --- Preguntas Falladas: top 10 ---
+  //
+  // Respuestas incorrectas restringidas por inner-join a intentos oficiales:
+  // asi aunque quedaran respuestas historicas de practica, no contaminan el
+  // analisis pedagogico de las preguntas del examen real.
+  const loadFailedQuestions = async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setIsLoading(true);
+    try {
       const { data: wrongAnswers } = await supabase
         .from('exam_attempt_answers')
         .select('question_id, exam_attempts!inner(exam_type)')
         .eq('is_correct', false)
         .eq('exam_attempts.exam_type', 'oficial');
 
-      // Preguntas del examen
       const { data: questions } = await supabase
         .from('exam_questions')
         .select('id, question');
 
-      const attemptsList = (attempts || []) as ExamAttempt[];
-      setExamAttempts(attemptsList);
-
-      // Calcular preguntas más falladas
       if (wrongAnswers && questions) {
         const failCounts: { [key: number]: number } = {};
         wrongAnswers.forEach((a: { question_id: number }) => {
@@ -260,19 +292,73 @@ export default function AdminPage() {
           .slice(0, 10);
         setFailedQuestions(sorted);
       }
+      markFresh('questions');
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      console.error('Error al cargar preguntas falladas:', error);
     } finally {
-      setIsLoading(false);
+      if (!opts.silent) setIsLoading(false);
     }
   };
 
-  // Recargar matrículas al iniciar sesión o al cambiar filtros
+  // --- Dispatcher: carga la pestana activa respetando TTL ---
+  //
+  // force=true -> bypass TTL, siempre recarga y muestra spinner bloqueante
+  //  (usado por login y por el boton "Actualizar Datos").
+  // force=false -> recarga solo si los datos estan stale; si ya hay datos
+  //  previos la recarga es silent (sin flicker).
+  const reloadActiveTab = async (opts: { force?: boolean } = {}) => {
+    const { force = false } = opts;
+    switch (activeTab) {
+      case 'registrations': {
+        if (!force && !isStale('registrations')) return;
+        const silent = !force && registrations.length > 0;
+        await loadRegistrations({ silent });
+        break;
+      }
+      case 'exams': {
+        if (!force && !isStale('exams')) return;
+        const silent = !force && examAttempts.length > 0;
+        await loadExams({ silent });
+        break;
+      }
+      case 'questions': {
+        if (!force && !isStale('questions')) return;
+        const silent = !force && failedQuestions.length > 0;
+        await loadFailedQuestions({ silent });
+        break;
+      }
+      case 'bank': {
+        if (!force && !isStale('bank')) return;
+        const silent = !force && bankQuestions.length > 0;
+        await loadBankQuestions({ silent });
+        break;
+      }
+      case 'config': {
+        if (!force && !isStale('config')) return;
+        await loadConfig();
+        break;
+      }
+    }
+  };
+
+  // Al iniciar sesion o al activar una pestana, cargamos sus datos si estan
+  // stale (respeta TTL). Con esto eliminamos el "loadAllData" pesado.
   useEffect(() => {
     if (!isAuthenticated) return;
-    loadRegistrations();
+    reloadActiveTab({ force: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, filterMonth, filterYear]);
+  }, [isAuthenticated, activeTab]);
+
+  // Al cambiar los filtros de matriculas, invalidamos el cache de esa pestana
+  // y recargamos si esta activa (los datos previos corresponden a otro filtro).
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    markStale('registrations');
+    if (activeTab === 'registrations') {
+      loadRegistrations({ silent: registrations.length > 0 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterMonth, filterYear]);
 
   // --- Cargar configuración del curso ---
   const loadConfig = async () => {
@@ -281,6 +367,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.course_month) setConfigMonth(data.course_month);
       if (data.course_year) setConfigYear(data.course_year);
+      markFresh('config');
     } catch (err) {
       console.warn('No se pudo cargar la configuración:', err);
     }
@@ -331,8 +418,12 @@ export default function AdminPage() {
   };
 
   // --- Banco de preguntas: cargar listado completo ---
-  const loadBankQuestions = async () => {
-    setBankLoading(true);
+  //
+  // opts.silent = true -> revalidacion en background sin spinner bloqueante
+  // (usado cuando el TTL expira y hay datos previos). El boton "Recargar" de
+  // la pestana si muestra el spinner (silent=false por default).
+  const loadBankQuestions = async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setBankLoading(true);
     setBankError(null);
     try {
       const res = await fetch('/api/admin/questions');
@@ -343,22 +434,14 @@ export default function AdminPage() {
       } else {
         setBankQuestions((data.questions || []) as BankQuestion[]);
       }
+      markFresh('bank');
     } catch (err: any) {
       setBankError('Error de conexion al cargar el banco.');
       setBankQuestions([]);
     } finally {
-      setBankLoading(false);
+      if (!opts.silent) setBankLoading(false);
     }
   };
-
-  // Al activar la pestana "Banco de Preguntas" por primera vez, cargamos.
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (activeTab === 'bank' && bankQuestions.length === 0 && !bankLoading) {
-      loadBankQuestions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, activeTab]);
 
   // --- Banco: subir imagen para una pregunta especifica ---
   const uploadQuestionImage = async (questionId: number, file: File) => {
@@ -462,8 +545,13 @@ export default function AdminPage() {
             <p className="text-gray-600">Americas Boating Club - Boqueron Power Squadron</p>
           </div>
           <div className="flex gap-4">
-            <button onClick={loadAllData} disabled={isLoading} className="btn-secondary text-sm">
-              {isLoading ? 'Cargando...' : 'Actualizar Datos'}
+            <button
+              onClick={() => reloadActiveTab({ force: true })}
+              disabled={isLoading || bankLoading}
+              className="btn-secondary text-sm"
+              title="Recarga los datos de la pestaña activa ignorando el caché"
+            >
+              {(isLoading || bankLoading) ? 'Cargando...' : 'Actualizar Datos'}
             </button>
             <button onClick={handleLogout} className="btn-secondary text-sm flex items-center gap-2">
               <LogOut className="w-4 h-4" /> Cerrar Sesión
@@ -869,7 +957,7 @@ export default function AdminPage() {
                 </p>
               </div>
               <button
-                onClick={loadBankQuestions}
+                onClick={() => loadBankQuestions()}
                 disabled={bankLoading}
                 className="btn-secondary text-sm disabled:opacity-50"
               >
