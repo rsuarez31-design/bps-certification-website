@@ -3,22 +3,27 @@
  *
  * Esta página permite a los estudiantes practicar con las
  * primeras 10 preguntas del banco de examen.
- * Es gratis y no requiere matrícula.
+ * Es gratis, anónima y NO requiere matrícula.
  *
  * Reglas:
- * - Solo 10 preguntas (las primeras del banco)
- * - Se aprueba con 80% o más (8 de 10 correctas)
- * - Los resultados se guardan en Supabase como tipo "practica"
+ * - SIEMPRE se muestran las preguntas con id 1..10 en orden ASC.
+ *   No se mezclan nunca: todos los estudiantes ven exactamente las mismas
+ *   10 preguntas, en el mismo orden, en todos los intentos.
+ * - Se aprueba con 80% o mas (8 de 10 correctas).
+ * - Los resultados son EFIMEROS: viven solo en el estado local del cliente,
+ *   se muestran al terminar y se pierden al salir de la pagina.
+ * - NO se guarda NADA en la base de datos: ni intentos, ni respuestas,
+ *   ni identidad del usuario. El admin panel no tiene ningun rastro
+ *   de actividad en el examen de practica.
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ExamQuestion } from '@/data/examQuestions';
 import { cargarPreguntas } from '@/lib/questions-loader';
 import ExamQuestionComponent from '@/components/ExamQuestion';
 import ExamProgress from '@/components/ExamProgress';
-import { supabase } from '@/lib/supabase-client';
 import { ClipboardList, CheckCircle2, XCircle, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
 
 const PASS_PERCENTAGE = 80; // 80% para aprobar
@@ -60,7 +65,11 @@ export default function PracticaPage() {
     setCargando(true);
     try {
       const todasLasPreguntas = await cargarPreguntas();
-      // Tomar las primeras 10 preguntas para la práctica
+      // El examen de practica SIEMPRE muestra las preguntas con id 1..10
+      // en orden ASC, sin mezclar. cargarPreguntas() retorna las filas
+      // ordenadas por id ASC (ver lib/questions-loader.ts), asi que basta
+      // con tomar las primeras 10. No se aplica Math.random ni mezcla
+      // aqui a proposito: el orden debe ser identico para todo el mundo.
       setQuestions(todasLasPreguntas.slice(0, 10));
       setExamStatus('in-progress');
     } catch (err) {
@@ -91,7 +100,13 @@ export default function PracticaPage() {
   };
 
   // --- Terminar el examen y calcular los resultados ---
-  const finishExam = async () => {
+  // El examen de practica es 100% EFIMERO. No se guarda nada en la base
+  // de datos: ni intentos, ni respuestas, ni identidad del usuario.
+  // Los resultados viven solo aqui en el estado local y se pierden cuando
+  // el estudiante sale de la pagina o recarga. Esto es intencional: la
+  // practica existe solamente para que el estudiante se familiarice con
+  // los conceptos, no para generar registros de actividad.
+  const finishExam = () => {
     let correct = 0;
     let incorrect = 0;
 
@@ -106,45 +121,6 @@ export default function PracticaPage() {
 
     setResults({ correct, incorrect, percentage, passed });
     setExamStatus('completed');
-
-    // Guardar el intento en Supabase
-    try {
-      const { data: attempt } = await supabase
-        .from('exam_attempts')
-        .insert({
-          // El examen de práctica es anónimo; se guarda un valor genérico
-          // para cumplir con la columna NOT NULL de la tabla.
-          student_name: 'Anónimo (Práctica)',
-          exam_type: 'practica',
-          total_questions: questions.length,
-          correct_answers: correct,
-          incorrect_answers: incorrect,
-          unanswered: questions.length - correct - incorrect,
-          percentage,
-          passed,
-          completed_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      // Guardar cada respuesta individual
-      if (attempt) {
-        const answers = questions
-          .filter((q) => studentAnswers[q.id] !== undefined)
-          .map((q) => ({
-            attempt_id: attempt.id,
-            question_id: q.id,
-            selected_index: studentAnswers[q.id],
-            is_correct: studentAnswers[q.id] === q.correctAnswer,
-          }));
-
-        if (answers.length > 0) {
-          await supabase.from('exam_attempt_answers').insert(answers);
-        }
-      }
-    } catch (error) {
-      console.error('Error al guardar resultados de práctica:', error);
-    }
   };
 
   // --- Reiniciar el examen ---

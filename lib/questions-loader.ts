@@ -21,6 +21,7 @@ function convertirPreguntaSupabase(row: any): ExamQuestion {
     options: [row.option_a, row.option_b, row.option_c, row.option_d],
     correctAnswer: row.correct_index,
     hint: row.hint || '',
+    imageUrl: row.image_url || '',
   };
 }
 

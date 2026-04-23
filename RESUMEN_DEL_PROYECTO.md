@@ -54,11 +54,12 @@ bps-website/
 │   └── lib/supabase-server.ts    <- Cliente Supabase para el servidor
 │
 ├── Datos del Examen
-│   └── data/examQuestions.ts     <- 85 preguntas con opciones y pistas
+│   └── data/examQuestions.ts     <- 75 preguntas con opciones y pistas (fallback local)
 │
 ├── Archivos SQL (para Supabase)
 │   ├── supabase/schema.sql       <- Crea todas las tablas de la base de datos
-│   └── supabase/seed-questions.sql <- Carga las 85 preguntas en la base de datos
+│   ├── supabase/migracion-v4-banco-75.sql <- Migracion activa: limpia, anade image_url y carga las 75 preguntas
+│   └── supabase/seed-questions.sql        <- (DEPRECATED) seed historico de 85 preguntas
 │
 └── Recursos Publicos
     └── public/images/bps-logo.png <- Logo de BPS
@@ -166,7 +167,7 @@ bps-website/
 
 **Archivo:** `app/examen/page.tsx`
 
-- 75 preguntas aleatorias de las 85 (algoritmo Fisher-Yates)
+- 75 preguntas del banco en orden aleatorio (Fisher-Yates), re-mezcladas en cada intento
 - Se aprueba con 80% o mas (60 de 75 correctas)
 - Resultados se guardan en Supabase como tipo "oficial"
 
@@ -242,7 +243,7 @@ bps-website/
 
 ### Tablas Creadas
 
-**exam_questions** (85 registros)
+**exam_questions** (75 registros, una fila por pregunta; incluye columna `image_url` opcional)
 
 - Preguntas del examen con opciones y respuesta correcta
 
@@ -261,7 +262,7 @@ bps-website/
 ### Archivos SQL
 
 - `supabase/schema.sql` - Crea las 4 tablas, indices, y politicas de seguridad
-- `supabase/seed-questions.sql` - Inserta las 85 preguntas del examen
+- `supabase/migracion-v4-banco-75.sql` - Inserta las 75 preguntas vigentes, anade `image_url` y crea el bucket `exam-images`
 
 ---
 
@@ -399,7 +400,7 @@ npm run lint
 - **Paginas:** 5 paginas principales
 - **Rutas de API:** 3 endpoints de servidor
 - **Componentes:** 5 componentes reutilizables
-- **Preguntas del Examen:** 85 preguntas completas con pistas
+- **Preguntas del Examen:** 75 preguntas completas con pistas e imagen opcional
 - **Tablas en Base de Datos:** 4 tablas con indices y politicas
 - **Idioma:** 100% en espanol (interfaz y comentarios de codigo)
 

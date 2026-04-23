@@ -193,7 +193,7 @@ export default function SomosPage() {
               { value: 500, suffix: '+', label: 'Navegantes Certificados' },
               { value: 50, suffix: '+', label: 'Años de Experiencia' },
               { value: 95, suffix: '%', label: 'Tasa de Aprobación' },
-              { value: 85, suffix: '', label: 'Preguntas del Examen' },
+              { value: 75, suffix: '', label: 'Preguntas del Examen' },
             ].map((stat, idx) => (
               <AnimatedSection key={idx} delay={idx * 0.1}>
                 <div className="text-4xl sm:text-5xl font-bold text-maritime-gold mb-2">

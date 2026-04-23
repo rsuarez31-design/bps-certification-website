@@ -1,1071 +1,1023 @@
 /**
- * ARCHIVO DE DATOS DEL EXAMEN
- * 
- * Este archivo contiene todas las 85 preguntas del examen de navegación
- * según la Ley 430 de Puerto Rico.
- * 
+ * ARCHIVO DE DATOS DEL EXAMEN (FALLBACK LOCAL)
+ *
+ * Este archivo contiene las 75 preguntas del examen de navegacion
+ * segun la Ley 430 de Puerto Rico. Se usa como respaldo local cuando
+ * Supabase no esta disponible.
+ *
+ * La fuente de verdad son las filas de la tabla exam_questions en Supabase.
+ * Este arreglo debe mantenerse sincronizado con ese banco.
+ *
  * Estructura:
- * - id: Identificador único de la pregunta (1-85)
+ * - id: Identificador unico de la pregunta (1-75)
  * - question: Texto de la pregunta
  * - options: Array con las 4 opciones (a, b, c, d)
- * - correctAnswer: Índice de la respuesta correcta (0=a, 1=b, 2=c, 3=d)
- * - hint: Pista que se muestra cuando el estudiante falla muchas preguntas
+ * - correctAnswer: Indice de la respuesta correcta (0=a, 1=b, 2=c, 3=d)
+ * - hint: Pista que se guarda en base de datos pero no se muestra en UI
+ * - imageUrl: Ruta/URL de la imagen a mostrar sobre la pregunta.
+ *            Cadena vacia si la pregunta no tiene imagen.
+ *            Solo la pregunta #28 tiene imagen por ahora.
  */
 
 export interface ExamQuestion {
   id: number;
   question: string;
   options: string[];
-  correctAnswer: number; // 0=a, 1=b, 2=c, 3=d
+  correctAnswer: number;
   hint: string;
+  imageUrl?: string;
 }
 
 export const examQuestions: ExamQuestion[] = [
   {
     id: 1,
-    question: "¿Qué describe mejor a una embarcación de recreo?",
+    question: "Como se comportaria un bote si se cargara por encima o mas alla de la capacidad especificada o estipulada en la placa de capacidad?",
     options: [
-      "Cualquier tipo de embarcación que no sea una canoa.",
-      "Cualquier embarcación fabricada después de 1971.",
-      "Una embarcación fabricada y utilizada principalmente para fines no comerciales.",
-      "Una embarcación utilizada principalmente para fines comerciales."
+      "este navegara mejor",
+      "este sera mas facil de detener",
+      "este sera dificil de controlar",
+      "este sera mucho mas rapido"
     ],
     correctAnswer: 2,
-    hint: "Piensa en la diferencia entre uso personal/familiar vs. uso para ganar dinero."
+    hint: "La carga excesiva complica el manejo.",
+    imageUrl: ""
   },
   {
     id: 2,
-    question: "¿Qué tipo de embarcación se mueve principalmente por la acción del viento sobre sus velas?",
+    question: "Ponerse el salvavidas cuando se esta en el agua:",
     options: [
-      "Bote de remo.",
-      "Velero.",
-      "Bote de motor.",
-      "PWC (Moto acuática)."
+      "es mas facil ya que el salvavidas flota",
+      "es mas facil ya que los tirantes del salvavidas estan mojados y flexibles",
+      "es mas dificil de ponerselo rapido ya que los salvavidas tienen una fuerza boyante considerable",
+      "es mas dificil ya que estos todavia deben estar en su empaque original envueltos en celofan"
     ],
-    correctAnswer: 1,
-    hint: "El nombre de este tipo de embarcación contiene la palabra 'vela'."
+    correctAnswer: 2,
+    hint: "La flotacion hace mas lento ponerselo.",
+    imageUrl: ""
   },
   {
     id: 3,
-    question: "¿Cuál es el nombre de la parte delantera de una embarcación?",
+    question: "Cual es una caracteristica de un chaleco salvavidas Tipo III?",
     options: [
-      "Popa.",
-      "Babor.",
-      "Proa.",
-      "Estribor."
+      "esta disenado para ser usado como un objeto que se puede lanzar",
+      "este sea considerado como un buen chaleco salvavidas para aguas turbulentas (mar picado) en alta mar",
+      "este tiene una fuerza boyante o flotabilidad mayor que todos los demas chalecos",
+      "este no volteara boca arriba a la mayoria de las personas inconscientes que lo esten usando"
     ],
-    correctAnswer: 2,
-    hint: "Es una palabra de dos sílabas que empieza con 'P' y está al frente."
+    correctAnswer: 3,
+    hint: "Piensa en lo que no hace con una persona inconsciente.",
+    imageUrl: ""
   },
   {
     id: 4,
-    question: "¿Cuál es el término para la parte posterior de una embarcación?",
+    question: "Que debes buscar cuando seleccionas un salvavidas?",
     options: [
-      "Proa.",
-      "Popa.",
-      "Babor.",
-      "Estribor."
+      "uso, tipo y tamano",
+      "estilo y costo",
+      "habilidad de nadar del usuario o persona",
+      "el tipo de bote donde lo vas a usar"
     ],
-    correctAnswer: 1,
-    hint: "También empieza con 'P' pero se refiere a la parte de atrás."
+    correctAnswer: 0,
+    hint: "La respuesta combina criterios basicos de eleccion.",
+    imageUrl: ""
   },
   {
     id: 5,
-    question: "¿Qué lado de la embarcación es 'Babor'?",
+    question: "Cual precaucion de seguridad debe tomarse primero, por el operador de un bote, cuando este navegando en aguas tormentosas, o aguas picadas, o con mal tiempo?",
     options: [
-      "El lado derecho cuando se mira hacia la proa.",
-      "El lado izquierdo cuando se mira hacia la proa.",
-      "El lado derecho cuando se mira hacia la popa.",
-      "La parte de arriba de la embarcación."
+      "cerrar todas las escotillas",
+      "enviar mensaje por radiotelefono de socorro \"MAYDAY\"",
+      "asegurarse que todos abordo tengan puesto un chaleco salvavidas aprobado por la Guardia Costanera de los Estados Unidos (USCG)",
+      "pedir ayuda inmediatamente a la Guardia Costanera"
     ],
-    correctAnswer: 1,
-    hint: "Babor es el lado izquierdo. Ambas palabras empiezan con consonantes."
+    correctAnswer: 2,
+    hint: "Primero protege a las personas a bordo.",
+    imageUrl: ""
   },
   {
     id: 6,
-    question: "¿Qué lado de la embarcación es 'Estribor'?",
+    question: "Despues de haber usado un salvavidas inflable, que paso debes seguir para asegurarte que este sera funcional en el futuro?",
     options: [
-      "El lado derecho cuando se mira hacia la proa.",
-      "El lado izquierdo cuando se mira hacia la proa.",
-      "El lado derecho cuando se mira hacia la popa.",
-      "La parte de abajo de la embarcación."
+      "rellenar el cartucho o cilindro de CO2",
+      "usas la valvula oral de inflar para rellenar el salvavidas",
+      "lo envias al USCG para inspeccion",
+      "reemplaza el cilindro o cartucho de CO2 y lo ensamblas o re-armas de nuevo"
     ],
-    correctAnswer: 0,
-    hint: "Estribor es el lado derecho. Ambas palabras empiezan con vocales."
+    correctAnswer: 3,
+    hint: "Hay que dejar el equipo listo para usarse otra vez.",
+    imageUrl: ""
   },
   {
     id: 7,
-    question: "¿Cómo se llama la parte superior del costado de una embarcación?",
+    question: "Que factor determina el numero y tamano de los extintores de fuegos que debes llevar abordo de un bote recreacional?",
     options: [
-      "Quilla.",
-      "Regala (Gunwale).",
-      "Espejo de popa (Transom).",
-      "Casco."
+      "el calado del bote",
+      "el largo del bote",
+      "el tipo del material del casco",
+      "el numero de pasajeros"
     ],
     correctAnswer: 1,
-    hint: "Es el borde superior donde uno se puede apoyar o sentar."
+    hint: "La medida del bote define ese requisito.",
+    imageUrl: ""
   },
   {
     id: 8,
-    question: "¿Qué tipo de casco permite que la embarcación se deslice sobre el agua a altas velocidades?",
+    question: "Senales de bengala marinos son senales populares de pirotecnia visual para pedir socorro o notificar el estar en apuros. Estos estan marcados con una fecha de expiracion:",
     options: [
-      "Casco de desplazamiento.",
-      "Casco de planeo.",
-      "Casco de fondo redondo.",
-      "Casco de quilla profunda."
+      "que puede ignorarse ya que usted usualmente tiene algunas senales adicionales como reserva o reemplazo",
+      "que es de 10 anos despues de la fecha de fabricacion",
+      "que es igual a la fecha de registracion del bote",
+      "que significa la fecha limite en que cumplen con los requisitos de la Guardia Costera (\"Coast Guard\")"
     ],
-    correctAnswer: 1,
-    hint: "La palabra clave es 'planeo' - como un avión que 'planea' sobre la pista."
+    correctAnswer: 3,
+    hint: "La fecha indica hasta cuando cumplen la norma.",
+    imageUrl: ""
   },
   {
     id: 9,
-    question: "¿Cuál es la función principal de la placa de capacidad de una embarcación?",
+    question: "Los conocimientos de navegacion, cabotaje o pilotaje (\"Piloting\") le dara dos habilidades invaluables de seguridad: 1) la habilidad de determinar tu posicion en cualquier momento, y 2) la habilidad de:",
     options: [
-      "Mostrar el nombre del fabricante.",
-      "Indicar el peso máximo y el número máximo de personas que la embarcación puede llevar con seguridad.",
-      "Indicar la velocidad máxima.",
-      "Mostrar la fecha de fabricación."
+      "seleccionar la ruta mas segura y eficiente de un lugar a otro",
+      "determinar la localizacion de los mejores sitios o lugares para pescar",
+      "determinar la localizacion de todos los tocones y troncos de arbol sumergidos en tu area o vecindad",
+      "pronosticar el tiempo"
     ],
-    correctAnswer: 1,
-    hint: "Es sobre la CAPACIDAD - cuánto peso y cuántas personas puede transportar de forma segura."
+    correctAnswer: 0,
+    hint: "La otra destreza tiene que ver con el recorrido.",
+    imageUrl: ""
   },
   {
     id: 10,
-    question: "¿Dónde debe colocarse el número de registro en una embarcación?",
+    question: "Que luces de navegacion deben ser visibles en la proa de un bote de motor de 19 pies que este navegando de noche?",
     options: [
-      "En el espejo de popa.",
-      "En ambos lados de la mitad delantera (proa).",
-      "En la parte superior de la cabina.",
-      "En la quilla."
+      "roja sobre verde, montadas o apiladas verticalmente",
+      "verde sobre roja, montadas o apiladas verticalmente",
+      "roja en el lado de babor, verde en el lado de estribor",
+      "verde en el lado de babor, roja en el lado de estribor"
     ],
-    correctAnswer: 1,
-    hint: "Debe ser visible desde ambos lados y cerca del frente para identificación fácil."
+    correctAnswer: 2,
+    hint: "Recuerda el color de cada costado.",
+    imageUrl: ""
   },
   {
     id: 11,
-    question: "¿Qué es el 'Calado' (Draft) de una embarcación?",
+    question: "Un operador o capitan de embarcacion que es consciente de la seguridad, nunca prende el motor de un bote antes de:",
     options: [
-      "La distancia desde la línea de flotación hasta la parte más alta.",
-      "La profundidad mínima de agua necesaria para que la embarcación flote.",
-      "El ancho máximo de la embarcación.",
-      "El peso total de la embarcación."
+      "oler o usar el olfato para detectar vapores de combustible en el compartimiento del motor y el combustible",
+      "que todos los pasajeros esten confortablemente sentados en la cabina, borda o espejo",
+      "haber chequeado de que hay bastante alcohol y aditivos en el combustible",
+      "haber chequeado o leido el informe climatologico en el periodico del domingo"
     ],
-    correctAnswer: 1,
-    hint: "Es importante saber qué tan profundo debe ser el agua para navegar sin tocar el fondo."
+    correctAnswer: 0,
+    hint: "Antes de arrancar, verifica si hay vapores.",
+    imageUrl: ""
   },
   {
     id: 12,
-    question: "¿Qué tipo de motor se monta generalmente en el exterior del espejo de popa?",
+    question: "Para evitar quedarse sin combustible, usted debe estimar o determinar la capacidad usable de su tanque de combustible y el rendimiento de consumo, y entonces:",
     options: [
-      "Motor intraborda.",
-      "Motor fueraborda.",
-      "Motor de propulsión a chorro.",
-      "Motor diésel."
+      "traes combustible adicional en envases faciles de usar como lo es una jarra o galon plastico de leche",
+      "planificas tener suficiente combustible para llegar a la proxima marina con estacion de combustible (gasolinera)",
+      "planificas en usar 1/2 tanque para llegar a tu destino, y 1/2 tanque para llegar al hogar",
+      "planificas en usar 1/3 de tanque para llegar a tu destino, un 1/3 de tanque para llegar a tu hogar, y 1/3 para emergencias"
     ],
-    correctAnswer: 1,
-    hint: "Si está 'fuera' del borde de la embarcación, es 'fuera-borda'."
+    correctAnswer: 3,
+    hint: "Una parte del combustible se reserva para imprevistos.",
+    imageUrl: ""
   },
   {
     id: 13,
-    question: "¿Qué equipo es obligatorio llevar en todas las embarcaciones de recreo para emergencias de hundimiento?",
+    question: "Cual es una senal tipica de que se aproxima mal tiempo?",
     options: [
-      "Una radio VHF.",
-      "Dispositivos de Flotación Personal (PFD) para cada persona a bordo.",
-      "Un GPS.",
-      "Una linterna estroboscópica."
+      "no hay cambios en la velocidad y direccion del viento por un periodo largo de tiempo",
+      "nubes amontonandose, oscureciendo, y aumentando en tamano",
+      "corrientes marinas cambiando de direccion",
+      "un aumento en la presion barometrica"
     ],
     correctAnswer: 1,
-    hint: "Lo más importante en caso de hundimiento es que las personas puedan flotar."
+    hint: "Mira el desarrollo de las nubes.",
+    imageUrl: ""
   },
   {
     id: 14,
-    question: "¿Cuál es un requisito para los PFD (Chalecos Salvavidas)?",
+    question: "Como deberia ser manejado un bote cuando es atrapado en ventiscas o ventarrones y aguas turbulentas o mar picado?",
     options: [
-      "Deben ser de color azul oscuro.",
-      "Deben estar aprobados por la Guardia Costera de los EE. UU.",
-      "Deben tener al menos 10 años de antigüedad.",
-      "Deben guardarse en cajas cerradas con llave."
+      "girar el bote de tal forma que las olas las tomaras de lado (\"broadside\")",
+      "reduzca la velocidad y dirijase hacia las olas con un angulo leve",
+      "aumente la velocidad y suavice el comportamiento de la embarcacion",
+      "gire el bote hacia aguas mas profundas"
     ],
     correctAnswer: 1,
-    hint: "La Guardia Costera es la autoridad que certifica equipos de seguridad marítima."
+    hint: "La proa no debe quedar totalmente de lado a las olas.",
+    imageUrl: ""
   },
   {
     id: 15,
-    question: "¿Qué clase de extintor de incendios se requiere para incendios de líquidos inflamables (gasolina, aceite)?",
+    question: "Cuando llegamos a un muelle o giramos para entrar en un espacio estrecho, la persona que esta al timon debe entender como varia el punto de pivote del bote. Donde esta el punto de pivote tipico cuando marchas hacia atras?",
     options: [
-      "Clase A.",
-      "Clase B.",
-      "Clase C.",
-      "Clase D."
+      "causa que el bote avance en circulos",
+      "aproximadamente a 1/3 del largo del bote desde la popa",
+      "afecta el consumo de combustible del bote",
+      "es similar al radio de giro de un carro"
     ],
     correctAnswer: 1,
-    hint: "Clase B es para líquidos inflamables. Recuerda: B de Barril (líquidos)."
+    hint: "El punto de giro se desplaza hacia atras.",
+    imageUrl: ""
   },
   {
     id: 16,
-    question: "¿Qué dispositivo ayuda a ventilar los vapores de gasolina del compartimiento del motor?",
+    question: "Que cotejo de mantenimiento rutinario debes hacer antes de encender el motor de tu bote?",
     options: [
-      "Un ventilador eléctrico (Blower).",
-      "Una bomba de achique.",
-      "Un silbato.",
-      "Un ancla."
+      "pulir las superficies brillosas de tal forma que sean resbaladizas cuando te le pares encima",
+      "escuchar el informe del tiempo en el radio VHF",
+      "verificar o chequear la fecha de expiracion de la pistola de bengalas (\"flare gun\")",
+      "chequear que las mangas del motor esten firmes y libres de goteo"
     ],
-    correctAnswer: 0,
-    hint: "Necesitas algo que 'sople' o ventile el aire para sacar los vapores peligrosos."
+    correctAnswer: 3,
+    hint: "Busca firmeza y ausencia de fugas.",
+    imageUrl: ""
   },
   {
     id: 17,
-    question: "¿Qué luces de navegación deben mostrar las embarcaciones de motor durante la noche?",
+    question: "Como deberian usarse las cadenas de seguridad con el enganche del arrastre?",
     options: [
-      "Luces rojas en ambos lados.",
-      "Una luz roja en babor, una verde en estribor y una blanca de todo horizonte.",
-      "Solo una luz blanca intermitente.",
-      "Luces azules y amarillas."
+      "cruzados sobre la lanza (poste de enganche) del carreton o remolque",
+      "cruzado debajo de la lanza o lengueta del carreton o remolque",
+      "amarrado al parachoques (\"bumper\") del vehiculo que remolca",
+      "amarrado a la winche (malacate) del carreton o arrastre"
     ],
     correctAnswer: 1,
-    hint: "Rojo = babor (izquierda), Verde = estribor (derecha), más una luz blanca."
+    hint: "La posicion correcta crea soporte bajo la lanza.",
+    imageUrl: ""
   },
   {
     id: 18,
-    question: "¿Cuál es la función de una señal acústica (pito o campana)?",
+    question: "Que condiciones afectan el juicio de una persona, hacen que la persona no piense claramente, reduce la habilidad del operador del bote para sobrevivir en el agua, y es la causa mayor que contribuye en los accidentes del bote?",
     options: [
-      "Para atraer peces.",
-      "Para advertir a otras embarcaciones de su presencia o intenciones en condiciones de poca visibilidad.",
-      "Para anunciar la llegada al puerto.",
-      "Para comunicarse con el muelle."
+      "indigestion",
+      "mareo",
+      "el uso de alcohol y drogas",
+      "fatiga por el calor"
     ],
-    correctAnswer: 1,
-    hint: "Es una herramienta de seguridad para ser escuchado cuando la visibilidad es limitada."
+    correctAnswer: 2,
+    hint: "Piensa en el factor que altera juicio y reaccion.",
+    imageUrl: ""
   },
   {
     id: 19,
-    question: "¿Qué indica una boya con franjas verticales rojas y blancas?",
+    question: "Que debes hacerle al bote antes de echarle combustible?",
     options: [
-      "Peligro inminente.",
-      "Aguas seguras (Mid-channel).",
-      "Zona de natación.",
-      "Obstrucción submarina."
+      "abrir todas las puertas",
+      "abrir todas las escotillas delanteras",
+      "cerrar todas las puertas y escotillas",
+      "cerrar todas las escotillas a favor del viento y abrir todas las escotillas en contra del viento"
     ],
-    correctAnswer: 1,
-    hint: "Las franjas rojas y blancas verticales indican que puedes navegar en medio del canal con seguridad."
+    correctAnswer: 2,
+    hint: "Antes de llenar, evita que entren vapores al interior.",
+    imageUrl: ""
   },
   {
     id: 20,
-    question: "Según las Reglas de Navegación, ¿qué debe hacer una embarcación que es 'cedente de paso'?",
+    question: "En un bote de recreo o placer, la localizacion del equipo de emergencia (chalecos salvavidas, extintores de fuego, senales visuales de emergencia, radio, etc.), debe verificarse antes de partir. Quienes deben participar para verificar o revisar la localizacion?",
     options: [
-      "Mantener su curso y velocidad.",
-      "Tomar una acción temprana y sustancial para mantenerse alejada de la otra embarcación.",
-      "Aumentar la velocidad para pasar rápido.",
-      "Detener el motor de inmediato."
+      "todos abordo",
+      "la tripulacion con paga de la embarcacion",
+      "todos los que no saben nadar",
+      "adultos con la edad de 21 y mayores"
     ],
-    correctAnswer: 1,
-    hint: "Si debes 'ceder el paso', debes moverte claramente para evitar la otra embarcación."
+    correctAnswer: 0,
+    hint: "Todos deben saber donde esta el equipo.",
+    imageUrl: ""
   },
   {
     id: 21,
-    question: "¿Qué debe hacer una embarcación 'privilegiada' (stand-on)?",
+    question: "Para que se usa un \"float plan\"?",
     options: [
-      "Cambiar de dirección inmediatamente.",
-      "Mantener su curso y velocidad a menos que sea evidente que la otra embarcación no está cediendo el paso.",
-      "Tocar la bocina continuamente.",
-      "Dar la vuelta completa."
+      "para informar a un amigo responsable sobre tu plan de viaje en bote",
+      "para describir las areas de una marina",
+      "para definir las reparaciones que se haran a tu bote",
+      "para identificar cualquier dispositivo de flotacion fijo en tu bote"
     ],
-    correctAnswer: 1,
-    hint: "Si tienes el privilegio de paso, mantente en tu curso para ser predecible."
+    correctAnswer: 0,
+    hint: "Se comparte con alguien responsable antes de salir.",
+    imageUrl: ""
   },
   {
     id: 22,
-    question: "Cuando dos embarcaciones de motor se encuentran de frente, ¿qué deben hacer?",
+    question: "El uso de alcohol y drogas es un problema significativo en el agua. De acuerdo a las estadisticas del \"USCG\", el 50% de todos los accidentes fatales envuelven el haber ingerido alcohol. El alcohol:",
     options: [
-      "Ambas deben girar a babor (izquierda).",
-      "Ambas deben girar a estribor (derecha) para pasar por el lado de babor de la otra.",
-      "La más pequeña debe detenerse.",
-      "La más rápida tiene la preferencia."
+      "no tiene ningun efecto en la habilidad para sobrevivir si cayeras al agua",
+      "no tiene ningun efecto en tu juicio o habilidad de pensar claramente",
+      "aumenta los efectos de fatiga del operador del bote",
+      "aumenta tu flexibilidad y mejora tu balance cuando estas parado sobre el borde de los lados del casco"
     ],
-    correctAnswer: 1,
-    hint: "Como al conducir un auto, cada uno gira a su derecha para evitar colisión frontal."
+    correctAnswer: 2,
+    hint: "Su efecto se suma al cansancio.",
+    imageUrl: ""
   },
   {
     id: 23,
-    question: "¿Quién tiene la preferencia de paso: un velero bajo vela o una embarcación de motor?",
+    question: "Cuando operas o manejas un bote cerca de otros botes, o cuando entras a un area congestionada, por que debes atento a la ola que tu generas o produces?",
     options: [
-      "La embarcación de motor siempre.",
-      "El velero, a menos que esté adelantando a la embarcación de motor.",
-      "El que vaya por el lado derecho.",
-      "Depende del tamaño de las velas."
+      "esta puede usarse para juzgar distancia contra otros",
+      "esta no debe ser mayor de tres pulgadas de alto",
+      "esta puede causar lesion personal o dano",
+      "esta puede usarse para estimar la velocidad del bote"
     ],
-    correctAnswer: 1,
-    hint: "Los veleros tienen limitaciones de maniobra, por eso generalmente tienen preferencia sobre motores."
+    correctAnswer: 2,
+    hint: "La estela puede afectar a otros.",
+    imageUrl: ""
   },
   {
     id: 24,
-    question: "¿Cuál es el color de las boyas que marcan el lado derecho de un canal cuando se regresa del mar?",
+    question: "Como el uso de alcohol afecta a los operadores de bote o a los pasajeros?",
     options: [
-      "Verde.",
-      "Rojo.",
-      "Amarillo.",
-      "Negro."
+      "las reacciones fisicas se tornan mas lentas",
+      "la habilidad de razonar se torna mas rapida",
+      "la percepcion de profundidad se agudiza",
+      "el balance y sentido de direccion mejora"
     ],
-    correctAnswer: 1,
-    hint: "Recuerda: 'Rojo a la derecha al volver' (Red Right Returning)."
+    correctAnswer: 0,
+    hint: "Piensa en el efecto sobre el tiempo de reaccion.",
+    imageUrl: ""
   },
   {
     id: 25,
-    question: "¿Qué frase ayuda a recordar los colores de las boyas al entrar a puerto?",
+    question: "Cuando es que tu puedes obviar, desviar o ignorar una Regla de la Guardia Costanera de los EUA?",
     options: [
-      "'Verde a la derecha al volver'.",
-      "'Rojo a la derecha al volver' (Red Right Returning).",
-      "'Blanco a la izquierda siempre'.",
-      "'Azul al sur'."
+      "cuando otro bote que viene detras te esta pasando para irse al frente",
+      "cuando todavia estas dentro de una marina",
+      "cuando tu estas operando una embarcacion menor de 14 pies de largo",
+      "cuando es necesario para evitar una colision o choque"
     ],
-    correctAnswer: 1,
-    hint: "Es una regla mnemotécnica en inglés muy popular: Red Right Returning."
+    correctAnswer: 3,
+    hint: "La excepcion existe solo para evitar un peligro mayor.",
+    imageUrl: ""
   },
   {
     id: 26,
-    question: "¿Qué indica una boya blanca con un diamante naranja?",
+    question: "Durante que horario aplica a los botes que esten navegando, la responsabilidad de mantener vigilancia humana, por via visual y auditiva?",
     options: [
-      "Zona de velocidad limitada.",
-      "Peligro (rocas, naufragio).",
-      "Información general.",
-      "Área prohibida."
+      "puesta del sol hasta el amanecer",
+      "amanecer hasta puesta del sol",
+      "en todo momento",
+      "durante lluvia o neblina"
     ],
-    correctAnswer: 1,
-    hint: "Un diamante naranja es una señal de advertencia de peligro."
+    correctAnswer: 2,
+    hint: "No depende de la hora del dia.",
+    imageUrl: ""
   },
   {
     id: 27,
-    question: "¿Qué indica una boya blanca con un círculo naranja?",
+    question: "De acuerdo a las Reglas de Navegacion, que factor se toma en cuenta para determinar una velocidad segura?",
     options: [
-      "Peligro.",
-      "Operaciones restringidas (ej. Límite de velocidad).",
-      "Área prohibida.",
-      "Amarre de botes."
+      "las condiciones de visibilidad",
+      "la velocidad maxima del bote",
+      "el numero de pasajeros",
+      "la capacidad indicada en la placa del bote"
     ],
-    correctAnswer: 1,
-    hint: "Un círculo indica control o restricción, como límites de velocidad."
+    correctAnswer: 0,
+    hint: "La velocidad segura cambia con lo que puedes ver.",
+    imageUrl: ""
   },
   {
     id: 28,
-    question: "¿Cuál es el principal peligro de consumir alcohol mientras se navega?",
+    question: "En la situacion de botes de motor mostrada arriba, que se deberia esperar que hiciera el bote \"B\" para aminorar las posibilidades de un choque o colision con el bote \"A\"?",
     options: [
-      "Aumenta la velocidad de la embarcación.",
-      "Afecta el juicio, el equilibrio y el tiempo de reacción.",
-      "Mejora la visión nocturna.",
-      "Ayuda a mantener el calor corporal."
+      "bajar la velocidad y/o virar a babor",
+      "bajar la velocidad y mantener el curso",
+      "aumentar la velocidad y/o virar a estribor",
+      "mantener el curso y velocidad actual"
     ],
-    correctAnswer: 1,
-    hint: "El alcohol tiene los mismos efectos peligrosos en el agua que al conducir un auto."
+    correctAnswer: 3,
+    hint: "Usa la opcion que marcaste en la imagen.",
+    imageUrl: "/exam-images/boat-q28.png"
   },
   {
     id: 29,
-    question: "¿Qué sucede si un operador se niega a realizar una prueba de sobriedad?",
+    question: "Cuando esta navegando se requiere que usted proceda a una velocidad segura y mantenga vigilancia o atencion en todo momento. La atencion y vision o vigilancia adecuada son factores mayores en:",
     options: [
-      "No pasa nada.",
-      "Se le da una advertencia verbal.",
-      "Puede perder sus privilegios de navegación y enfrentar multas.",
-      "Debe pagar una pequeña propina."
+      "encontrar lineas de demarcacion",
+      "evita una colision o choque",
+      "medir la temperatura del agua para determinar las aguas mas calmadas",
+      "determinar la precision de la direccion de la brujula"
     ],
-    correctAnswer: 2,
-    hint: "Negarse a la prueba tiene consecuencias legales graves, similar a las carreteras."
+    correctAnswer: 1,
+    hint: "La funcion principal es prevenir incidentes.",
+    imageUrl: ""
   },
   {
     id: 30,
-    question: "¿A qué distancia mínima deben mantenerse las embarcaciones de una bandera de buceo ('Diver Down')?",
+    question: "Cuando te encuentras de frente con otro bote de motor, este emite un bocinazo o pito corto. Que te esta comunicando o diciendo el operador de la otra embarcacion?",
     options: [
-      "10 pies.",
-      "50 pies.",
-      "100 pies (en aguas abiertas generalmente más).",
-      "500 pies."
+      "su intencion de mantener curso y velocidad",
+      "que mi timon esta a la izquierda y piensa cambiar su curso a babor",
+      "que se apresta a cambiar curso hacia estribor para pasar babor con babor",
+      "que se prepara a anclar en un minuto para permitir que el trafico pase"
     ],
     correctAnswer: 2,
-    hint: "Los buceadores necesitan espacio considerable para seguridad - piensa en al menos un campo de fútbol de longitud."
+    hint: "Un sonido corto indica un cambio simple de rumbo.",
+    imageUrl: ""
   },
   {
     id: 31,
-    question: "¿Qué debe hacer si alguien cae al agua (Hombre al agua)?",
+    question: "Cuando dejas la marina y te encaminas hacia alta mar y ves una boya roja, como tu deberias actuar o proceder:",
     options: [
-      "Seguir navegando y llamar a la policía.",
-      "Girar la popa (y la hélice) lejos de la persona y lanzarle un dispositivo de flotación.",
-      "Tirarse al agua de inmediato sin chaleco.",
-      "Aumentar la velocidad para buscar ayuda."
+      "quedarme no menos de 20 yardas alejado de la boya",
+      "quedarme totalmente alejado de la boya",
+      "mantener la boya a mi lado de estribor",
+      "mantener la boya a mi lado de babor"
     ],
-    correctAnswer: 1,
-    hint: "Lo más importante es proteger a la persona de la hélice y darle algo para flotar."
+    correctAnswer: 3,
+    hint: "Piensa en la regla al salir hacia mar abierto.",
+    imageUrl: ""
   },
   {
     id: 32,
-    question: "¿Cuál es el peligro del Monóxido de Carbono (CO)?",
+    question: "Marcadores (rotulos) de Regulaciones e Informacion son faciles de identificar a traves de que rasgos o caracteristicas?",
     options: [
-      "Es un gas visible y con olor a flores.",
-      "Es un gas incoloro, inodoro y altamente tóxico producido por los motores.",
-      "Ayuda a respirar mejor en el mar.",
-      "Solo se encuentra en los veleros."
+      "lineas verticales negras y blancas",
+      "forma triangular y letras rojas",
+      "color blanco con formas geometricas de naranja",
+      "simbolo amarillo cuadrado o triangular"
     ],
-    correctAnswer: 1,
-    hint: "El CO es peligroso precisamente porque NO puedes verlo ni olerlo, pero es mortal."
+    correctAnswer: 2,
+    hint: "Se reconocen por el fondo y las figuras.",
+    imageUrl: ""
   },
   {
     id: 33,
-    question: "¿Qué debe hacer antes de llenar el tanque de gasolina en un muelle?",
+    question: "Cual es el factor principal a considerarse cuando planeas acercarte con tu embarcacion al muelle donde te vas a amarrar?",
     options: [
-      "Dejar el motor encendido.",
-      "Apagar el motor y cerrar todas las escotillas y puertas.",
-      "Encender un cigarrillo para relajarse.",
-      "Mantener el radio a todo volumen."
+      "el informe o pronostico del tiempo para esa noche",
+      "el largo de los cabos de amarre de la embarcacion",
+      "la capacidad de poder parar de tu embarcacion",
+      "la fuerza del viento o la corriente"
     ],
-    correctAnswer: 1,
-    hint: "Los vapores de gasolina son extremadamente inflamables - necesitas eliminar todas las fuentes de ignición."
+    correctAnswer: 3,
+    hint: "Piensa en lo que mas afecta la maniobra al acercarte.",
+    imageUrl: ""
   },
   {
     id: 34,
-    question: "¿Cuál es la causa principal de la mayoría de los accidentes fatales en embarcaciones?",
+    question: "Cual es la tecnica adecuada para anclarse?",
     options: [
-      "Rayos.",
-      "Incendios.",
-      "Ahogamiento por no usar PFD tras caídas o vuelcos.",
-      "Ataques de tiburones."
+      "desde la borda de estribor",
+      "sobre el lado de babor",
+      "sobre el espejo o popa",
+      "desde la proa"
     ],
-    correctAnswer: 2,
-    hint: "La mayoría de las muertes ocurren porque las personas no llevaban puesto su chaleco salvavidas."
+    correctAnswer: 3,
+    hint: "El ancla se maneja desde el extremo delantero.",
+    imageUrl: ""
   },
   {
     id: 35,
-    question: "¿Qué factor meteorológico es más peligroso para un navegante?",
+    question: "Cual es la mejor precaucion contra el envenenamiento por monoxido de carbono?",
     options: [
-      "El sol brillante.",
-      "Cambios repentinos en el viento y nubes oscuras (tormentas).",
-      "La marea baja.",
-      "La brisa suave."
+      "mantenga aire fluyendo a traves de la embarcacion",
+      "prenda el ventilador (extractor de aire) del motor cuando este navegando",
+      "instalar una alarma de humo en la cabina delantera",
+      "quedarse en la parte de la popa cuando la embarcacion este navegando"
     ],
-    correctAnswer: 1,
-    hint: "Las tormentas pueden aparecer rápidamente y crear condiciones peligrosas en minutos."
+    correctAnswer: 0,
+    hint: "La circulacion de aire es clave.",
+    imageUrl: ""
   },
   {
     id: 36,
-    question: "¿Cómo se debe acercar una embarcación a un muelle para atracar?",
+    question: "Cual es la primera accion requerida de un operador de bote que haya presenciado un accidente de bote?",
     options: [
-      "A máxima velocidad.",
-      "Contra el viento o la corriente (lo que sea más fuerte) para un mejor control.",
-      "A favor del viento siempre.",
-      "De popa primero sin mirar."
+      "mantengase alejado o fuera del camino",
+      "provea asistencia o ayuda si es posible",
+      "escriba un reporte del incidente",
+      "espere a que llegue personal de rescate"
     ],
     correctAnswer: 1,
-    hint: "Ir contra el viento/corriente te permite frenar naturalmente y tener más control."
+    hint: "Primero ayuda, si puedes hacerlo con seguridad.",
+    imageUrl: ""
   },
   {
     id: 37,
-    question: "¿Qué es el 'Corte de seguridad del motor' (Engine Cut-Off Switch)?",
+    question: "Si su embarcacion se vuelca cuando usted esta lejos de la orilla, cual seria la accion mas segura a seguir?",
     options: [
-      "Un interruptor para encender las luces.",
-      "Un dispositivo que apaga el motor si el operador cae por la borda.",
-      "Un botón para aumentar la potencia.",
-      "El control del aire acondicionado."
+      "nadar hacia la orilla mas cercana",
+      "nadar hacia la embarcacion mas cercana",
+      "quedarse con el bote y subirse o treparse encima si es posible",
+      "quedarse en el agua al lado del bote y mantenerse en movimiento en el agua"
     ],
-    correctAnswer: 1,
-    hint: "Es un dispositivo de seguridad que se conecta al operador y detiene el motor si se separa."
+    correctAnswer: 2,
+    hint: "La embarcacion sigue siendo tu mejor apoyo.",
+    imageUrl: ""
   },
   {
     id: 38,
-    question: "¿Qué documento debe llevarse a bordo siempre que la embarcación esté operando?",
+    question: "Cuando es que un bote es menos estable y propenso a volcarse boca abajo?",
     options: [
-      "El certificado de título original.",
-      "El certificado de número de registro (original o copia según la ley).",
-      "El manual del motor.",
-      "Un mapa de carreteras."
+      "cuando el peso o la carga esta distribuida uniformemente",
+      "cuando los tanques de combustible estan medio vacios",
+      "cuando se esta en aguas profundas",
+      "cuando se esta con sobrepeso o sobre cargado"
     ],
-    correctAnswer: 1,
-    hint: "Similar a la licencia de conducir de un auto, necesitas el registro a bordo."
+    correctAnswer: 3,
+    hint: "La carga excesiva reduce estabilidad.",
+    imageUrl: ""
   },
   {
     id: 39,
-    question: "¿Qué edad mínima se requiere en muchos estados para operar una PWC (Moto acuática) sin supervisión?",
+    question: "Cual es la forma recomendada de moverse o caminar dentro de un bote pequeno?",
     options: [
-      "8 años.",
-      "10 años.",
-      "14 o 16 años (varía por estado, pero suele ser la respuesta estándar en exámenes).",
-      "21 años."
+      "limitese a moverse en la mitad delantera del bote",
+      "mantengase agachado y muevase cerca de la linea del centro del bote",
+      "mantengase erguido o derecho con los pies separados para mejor balance",
+      "acomode las personas en un lado y muevase a traves del lado opuesto"
     ],
-    correctAnswer: 2,
-    hint: "Es similar a la edad para conducir ciclomotores - entre la adolescencia temprana y media."
+    correctAnswer: 1,
+    hint: "Conviene mantenerse bajo y centrado.",
+    imageUrl: ""
   },
   {
     id: 40,
-    question: "¿A qué hora está generalmente prohibido operar una PWC?",
+    question: "Cual es la accion recomendable al encontrarse con visibilidad limitada de cualquier tipo:",
     options: [
-      "Al mediodía.",
-      "Entre la puesta del sol y la salida del sol (noche).",
-      "Durante la mañana.",
-      "Cuando hay otros botes cerca."
+      "pongase el equipo para mal tiempo para protegerse del frio y de mojarse",
+      "determine su posicion tan precisa como sea posible mientras haya visibilidad para hacerlo",
+      "toque o timbre la campana del barco un timbre corto cada segundo para avisarle a otras embarcaciones de su presencia",
+      "use su transmisor cada tres minutos para anunciar que usted se esta moviendo o navegando y le pide a las demas embarcaciones que se mantengan fuera de su camino"
     ],
     correctAnswer: 1,
-    hint: "Las PWC no tienen las luces de navegación requeridas para operación nocturna."
+    hint: "Ubicate bien antes de perder referencia visual.",
+    imageUrl: ""
   },
   {
     id: 41,
-    question: "¿Qué es necesario para que una PWC pueda girar?",
+    question: "Cuando estas solo, abandonado o aislado en agua fria, y tienes puesto tu salvavidas aprobado por el USCG, que debes hacer para evitar perder calor corporal?",
     options: [
-      "Apagar el motor.",
-      "Tener potencia (aceleración). Si se suelta el acelerador, se pierde el control de dirección.",
-      "Bajar un ancla.",
-      "Moverse hacia la parte trasera."
+      "mantener el cuerpo en movimiento en el agua",
+      "nade con brazadas de pecho en circulos grande",
+      "contraiga las rodillas y brazos hacia el pecho",
+      "flote boca arriba con sus brazos y piernas extendidas"
     ],
-    correctAnswer: 1,
-    hint: "Las PWC necesitan el flujo de agua del motor para dirigir - sin aceleración, no hay dirección."
+    correctAnswer: 2,
+    hint: "La postura debe conservar calor, no gastarlo.",
+    imageUrl: ""
   },
   {
     id: 42,
-    question: "¿Qué equipo adicional debe llevar una embarcación que remolca a un esquiador?",
+    question: "Para evitar una lesion grave causada por la helice de tu motor, como tu deberias acercartele a un banista o nadador en un area designada como area de banistas o para nadar?",
     options: [
-      "Un segundo motor.",
-      "Un observador competente o un espejo retrovisor de gran angular (según la ley estatal).",
-      "Una caña de pescar.",
-      "Luces de discoteca."
+      "solamente cuando el salvavidas no este trabajando.",
+      "solamente cuando el salvavidas este trabajando",
+      "nunca se le acerque a un banista que este en un area designada como area para banistas",
+      "desde viento abajo del banista y dentro de las sogas"
     ],
-    correctAnswer: 1,
-    hint: "El operador necesita observar al esquiador - ya sea con otra persona o con un espejo."
+    correctAnswer: 2,
+    hint: "La zona marcada excluye esa aproximacion.",
+    imageUrl: ""
   },
   {
     id: 43,
-    question: "¿Qué indica una bandera roja con una franja blanca diagonal?",
+    question: "A que parte del fuego tu debes apuntar cuando usas un extintor de fuegos?",
     options: [
-      "Barco en peligro.",
-      "Buceador en el agua (Bandera de buceo recreativa).",
-      "Área de carreras.",
-      "Fin de la zona navegable."
+      "al tope",
+      "a un lado",
+      "a la base",
+      "al medio"
     ],
-    correctAnswer: 1,
-    hint: "Esta bandera advierte que hay buceadores bajo el agua en el área."
+    correctAnswer: 2,
+    hint: "El punto eficaz esta donde comienza el fuego.",
+    imageUrl: ""
   },
   {
     id: 44,
-    question: "¿Cuál es la mejor manera de prevenir la propagación de especies acuáticas invasoras (como el mejillón cebra)?",
+    question: "Cual es el primer paso o accion que se debe seguir o tomar, cuando una embarcacion encalla o se vara?",
     options: [
-      "Pintar el bote de colores brillantes.",
-      "Lavar, drenar y secar el bote y el equipo antes de ir a otro cuerpo de agua.",
-      "Navegar solo en agua salada.",
-      "Dejar el agua acumulada en la sentina."
+      "llamar a la Guardia Costanera",
+      "buscar infiltraciones o goteras de agua",
+      "averiguar la profundidad del agua",
+      "poner el motor en reversa o marcha hacia atras"
     ],
     correctAnswer: 1,
-    hint: "Las especies invasoras viajan en el agua o adheridas al equipo - limpieza total es clave."
+    hint: "Primero verifica si hubo entrada de agua.",
+    imageUrl: ""
   },
   {
     id: 45,
-    question: "¿Qué debe hacer si su embarcación se vuelca?",
+    question: "Operadores de canoa o remeros estan particularmente en riesgo de una situacion peligrosa llamada:",
     options: [
-      "Tratar de nadar hacia la orilla aunque esté lejos.",
-      "Quedarse con la embarcación (flotar sobre ella o agarrarse).",
-      "Quitarse el chaleco salvavidas para nadar mejor.",
-      "Gritar hasta quedarse sin aliento."
+      "fatiga de los boteros",
+      "a la deriva",
+      "entrampamiento",
+      "fatiga por agua fria"
     ],
-    correctAnswer: 1,
-    hint: "La embarcación es más visible para los rescatistas y te ayuda a conservar energía."
+    correctAnswer: 3,
+    hint: "La respuesta menciona un efecto del agua.",
+    imageUrl: ""
   },
   {
     id: 46,
-    question: "¿Qué tipo de extintor debe llevar una embarcación de menos de 26 pies?",
+    question: "Que accion pudiera causar la perdida de la habilidad de guiar en una motora acuatica o PWC?",
     options: [
-      "Al menos uno de Clase B-I.",
-      "Al menos tres de Clase A.",
-      "Ninguno.",
-      "Uno de Clase D."
+      "poner el control de la gasolina al maximo",
+      "soltar el control de la gasolina",
+      "no girar el guia lo suficiente",
+      "girar el guia en exceso o demasiado"
     ],
-    correctAnswer: 0,
-    hint: "Embarcaciones pequeñas necesitan al menos un extintor Clase B (para líquidos inflamables) tamaño I."
+    correctAnswer: 1,
+    hint: "En PWC, el giro depende del empuje.",
+    imageUrl: ""
   },
   {
     id: 47,
-    question: "¿Dónde se encuentra la línea de 'Estribor'?",
+    question: "Que Regla(s) de Navegacion aplica(n) a un bote propulsado por chorro de agua (PWC)?",
     options: [
-      "A la izquierda.",
-      "A la derecha.",
-      "Al frente.",
-      "Atrás."
+      "un PWC debe mostrar sus luces de navegacion cuando se usa despues de anochecer",
+      "normalmente un PWC tiene prioridad de movimiento en situaciones de encuentro o cruce",
+      "un PWC esta exento de todas las reglas y regulaciones que aplican para botes",
+      "operadores se tienen que adherir a muchas de las mismas reglas y regulaciones que aplican a botes grandes"
     ],
-    correctAnswer: 1,
-    hint: "Recuerda: Estribor = Derecha (ambas con vocales al inicio)."
+    correctAnswer: 3,
+    hint: "No esta exento por ser pequeno o distinto.",
+    imageUrl: ""
   },
   {
     id: 48,
-    question: "¿Qué información se encuentra en el Título de una embarcación?",
+    question: "Debido a las diferentes caracteristicas de operar, algunos estados consideran las motoras acuaticas (PWC) como una clase especial de bote y tienen regulaciones especiales para estos. Como operador de una motora acuatica (PWC), usted tiene que:",
     options: [
-      "El historial de pesca del dueño.",
-      "Prueba de propiedad de la embarcación.",
-      "El menú del puerto.",
-      "Las reglas de etiqueta."
+      "llevar abordo una copia de las reglas de la Comision de Reglas Especiales para PWC",
+      "estar consciente de/y proceder de acuerdo a todas las leyes que gobiernan o regulan el uso de motoras acuaticas en su area",
+      "conocer las Reglas Especiales de la Navegacion que aplican unicamente a los PWCs",
+      "seguir las reglas establecidas por la Asociacion Nacional de Navegacion"
     ],
     correctAnswer: 1,
-    hint: "El título es el documento legal que prueba quién es el dueño."
+    hint: "La clave es conocer y seguir la ley local aplicable.",
+    imageUrl: ""
   },
   {
     id: 49,
-    question: "¿Qué es un 'Plan de Flotación' (Float Plan)?",
+    question: "Remolcar a esquiadores en el agua, tablas para las olas generadas por el bote, y tubos es muy popular y divertido. Se requieren procedimientos especiales para la seguridad de todas las personas envueltas que incluyen:",
     options: [
-      "Un dibujo del bote.",
-      "Un documento dejado en tierra con detalles del viaje y personas a bordo.",
-      "El manual de instrucciones del ancla.",
-      "Una receta de comida marina."
+      "remolcar lo mas cerca posible y justamente despues de la puesta del sol, porque es cuando el agua es normalmente mas calmada",
+      "remolcar en aguas profundas, canales estrechos para asegurarse de que el agua sea lo suficientemente profunda",
+      "mantener la mayor distancia posible de los barcos, muelles y casa-botes con un minimo de 200 pies de ancho para el paso del esquiador",
+      "estar cerca de otros botes recreacionales de tal forma que ellos puedan ayudar en recoger personas cuando estas se caen"
     ],
-    correctAnswer: 1,
-    hint: "Es como dejar una nota diciendo a dónde vas y cuándo vuelves - para seguridad."
+    correctAnswer: 2,
+    hint: "Busca espacio amplio y separacion.",
+    imageUrl: ""
   },
   {
     id: 50,
-    question: "¿Qué tipo de ancla es más común para embarcaciones pequeñas?",
+    question: "Que reglas de navegacion aplican a operadores envueltos en la pesca recreacional?",
     options: [
-      "Ancla de cemento.",
-      "Ancla tipo Danforth o de arado.",
-      "Un bloque de madera.",
-      "Una cadena simple."
+      "solamente aquellas reglas de navegacion que son especificamente para deportistas",
+      "reglas del Servicio Nacional de Pesca y Vida Silvestre (\"US Fish and Wildlife Service\")",
+      "las mismas reglas que aplican a todos los operadores de embarcacion",
+      "reglas de navegacion para cuando es de dia"
     ],
-    correctAnswer: 1,
-    hint: "Las anclas Danforth y de arado son diseños específicos muy efectivos para botes pequeños."
+    correctAnswer: 2,
+    hint: "Pescar no elimina las reglas generales.",
+    imageUrl: ""
   },
   {
     id: 51,
-    question: "¿Qué debe hacer si se encuentra en condiciones de niebla densa?",
+    question: "Las areas azules en una carta indican:",
     options: [
-      "Aumentar la velocidad para salir rápido.",
-      "Reducir la velocidad a la mínima necesaria para mantener el rumbo y emitir señales sonoras.",
-      "Apagar todas las luces.",
-      "Anclar en medio del canal."
+      "agua profunda y segura",
+      "areas sujetas a la fluctuacion de la marea",
+      "agua relativamente llana",
+      "tierra seca"
     ],
-    correctAnswer: 1,
-    hint: "En niebla, ve despacio, escucha y haz ruido para que otros te escuchen."
+    correctAnswer: 2,
+    hint: "No se refiere a tierra ni a gran profundidad.",
+    imageUrl: ""
   },
   {
     id: 52,
-    question: "¿Cuál es el propósito de las señales visuales de socorro (VDS)?",
+    question: "Las cartas, para areas sujetas o expuestas a la marea, siempre muestran el espacio libre vertical hacia los objetos altos en:",
     options: [
-      "Para iluminar la cubierta en fiestas.",
-      "Para pedir ayuda en caso de emergencia.",
-      "Para asustar a las aves.",
-      "Para marcar el final de una carrera."
+      "mitad de la marea",
+      "marea baja",
+      "un plano de referencia escogido por las autoridades del pueblo",
+      "el promedio de la marea alta"
     ],
     correctAnswer: 1,
-    hint: "VDS son herramientas para señalar que necesitas ayuda de emergencia."
+    hint: "La referencia es la condicion de menor nivel.",
+    imageUrl: ""
   },
   {
     id: 53,
-    question: "¿Qué es la 'Hipotermia'?",
+    question: "En el sistema cuadriculado que hace posible identificar cualquier punto en la superficie de la tierra, lineas laterales imaginarias o paralelos de latitud:",
     options: [
-      "Un exceso de energía.",
-      "Una pérdida peligrosa de calor corporal por exposición al agua o aire frío.",
-      "Una alergia al pescado.",
-      "Una técnica de buceo."
+      "corren hacia el este y oeste",
+      "corren norte y sur",
+      "son numeradas de 0 a 180",
+      "corren a traves de los polos geograficos"
     ],
-    correctAnswer: 1,
-    hint: "'Hipo' significa bajo, 'termia' se refiere a temperatura - baja temperatura corporal."
+    correctAnswer: 0,
+    hint: "Los paralelos rodean la tierra de lado a lado.",
+    imageUrl: ""
   },
   {
     id: 54,
-    question: "¿Cuál es la regla de oro para el mantenimiento del motor?",
+    question: "Una forma precisa de determinar donde te encuentras en el agua es:",
     options: [
-      "Nunca cambiar el aceite.",
-      "Seguir el programa de mantenimiento del fabricante.",
-      "Usar gasolina con mucho etanol.",
-      "Solo revisarlo cuando se rompa."
+      "mirando la brujula o compas",
+      "encontrando tu posicion en los (\"Local Notice to Mariners\") Comunicados Locales para Marineros",
+      "encontrando tu posicion relativa a un objeto o ayuda a la navegacion que este identificado en la carta",
+      "preguntandole al operador de un bote que pase cerca"
     ],
-    correctAnswer: 1,
-    hint: "El fabricante sabe mejor que nadie cómo cuidar su motor - sigue sus instrucciones."
+    correctAnswer: 2,
+    hint: "Relaciona tu posicion con una referencia en la carta.",
+    imageUrl: ""
   },
   {
     id: 55,
-    question: "¿Qué indica una luz blanca visible desde todas las direcciones en una embarcación de motor de menos de 39.4 pies?",
+    question: "La direccion verdadera en una carta es medida desde 000 hasta 359 en direccion a favor de las manecillas del reloj desde:",
     options: [
-      "Que la embarcación está pescando.",
-      "Que la embarcación está anclada o navegando (según el contexto de otras luces).",
-      "Que es un barco de policía.",
-      "Que el barco está hundiéndose."
+      "el rumbo o direccion de la brujula",
+      "el norte geografico verdadero",
+      "el sur geografico verdadero",
+      "desde la Linea de Lubber (\"Lubber's Line\")"
     ],
     correctAnswer: 1,
-    hint: "Una luz blanca de 360° puede indicar diferentes cosas dependiendo de si hay otras luces encendidas."
+    hint: "La medida parte del norte correcto de la carta.",
+    imageUrl: ""
   },
   {
     id: 56,
-    question: "¿Cómo se llama la cuerda o cadena conectada al ancla?",
+    question: "La Rosa Nautica y _________ te indicaran el norte verdadero y te dara la direccion norte- sur en las cartas.",
     options: [
-      "Cabo de ancla (Rode).",
-      "Cordón.",
-      "Hilo.",
-      "Escota."
+      "los meridianos de longitud",
+      "el bloque del titulo de la carta",
+      "los paralelos de latitud",
+      "la escala de las millas nauticas"
     ],
     correctAnswer: 0,
-    hint: "En terminología náutica, la línea del ancla se llama 'rode' en inglés o 'cabo de ancla'."
+    hint: "La otra referencia corre de norte a sur.",
+    imageUrl: ""
   },
   {
     id: 57,
-    question: "¿A qué lado debe dejar una boya roja al navegar hacia aguas arriba (hacia la fuente)?",
+    question: "El maximo de caballaje permitido por ley para operar una embarcacion en lagos es de:",
     options: [
-      "Babor.",
-      "Estribor (Derecha).",
-      "Detrás.",
-      "Por debajo."
+      "10 caballos de fuerza",
+      "20 caballos de fuerza",
+      "30 caballos de fuerza",
+      "40 caballos de fuerza"
     ],
-    correctAnswer: 1,
-    hint: "Hacia arriba es como 'regresar' al interior - aplica 'Rojo a la derecha al volver'."
+    correctAnswer: 3,
+    hint: "Es la cifra mayor entre las opciones.",
+    imageUrl: ""
   },
   {
     id: 58,
-    question: "¿Qué significa 'Navegación por estima' (Dead Reckoning)?",
+    question: "Si una brujula o compas esta debidamente instalada y la desviacion es cero, los numeros en la tarjeta del compas cuando se lee la Linea de Lubber (\"Lubber's Line\"), esta estara indicando la direccion o rumbo hacia donde se dirige el bote, con referencia a:",
     options: [
-      "Adivinar dónde se está.",
-      "Calcular la posición actual basada en una posición anterior, velocidad y tiempo.",
-      "Usar solo el GPS.",
-      "Preguntar a otros navegantes."
+      "el norte magnetico",
+      "la estrella polar",
+      "el norte verdadero",
+      "la linea de centro del bote"
     ],
-    correctAnswer: 1,
-    hint: "Es un cálculo matemático usando tu última posición conocida más tu velocidad y dirección."
+    correctAnswer: 0,
+    hint: "Sin desviacion, la referencia sigue siendo magnetica.",
+    imageUrl: ""
   },
   {
     id: 59,
-    question: "¿Qué es el 'Escobén' (Hawsepipe)?",
+    question: "Instale una brujula o compas de tal forma que:",
     options: [
-      "Una parte del motor.",
-      "El orificio por donde pasa la cadena del ancla.",
-      "Un tipo de remo.",
-      "Una ventana."
+      "la tarjeta del compas se pueda ver desde cualquier parte del bote",
+      "este lo mas cerca posible de tu radio VHF",
+      "no este en el camino--en cualquier lugar que puedas encontrarle un lugar",
+      "una linea que atraviesa el \"Lubber's Line\" y el centro del compas tambien este paralelo a la quilla"
     ],
-    correctAnswer: 1,
-    hint: "Es el tubo o agujero en el casco por donde baja y sube la cadena del ancla."
+    correctAnswer: 3,
+    hint: "Debe quedar alineado con el eje del bote.",
+    imageUrl: ""
   },
   {
     id: 60,
-    question: "¿Cuál es el efecto de la corriente en la maniobrabilidad?",
+    question: "Cuantas horas tiene usted para informar a cualquier agente del orden publico cuando ocurre un accidente donde hay danos a la propiedad que excedan los $100.00?",
     options: [
-      "No tiene efecto.",
-      "Puede desviar la embarcación de su curso planeado.",
-      "Siempre ayuda a ir más rápido.",
-      "Solo afecta a los veleros."
+      "12 horas",
+      "24 horas",
+      "48 horas",
+      "72 horas"
     ],
     correctAnswer: 1,
-    hint: "La corriente es como un río invisible que empuja tu embarcación hacia un lado."
+    hint: "La notificacion se hace dentro de un dia.",
+    imageUrl: ""
   },
   {
     id: 61,
-    question: "¿Qué es un 'Nudo' en términos de velocidad náutica?",
+    question: "Una milla nautica es:",
     options: [
-      "Una milla terrestre por hora.",
-      "Una milla náutica por hora.",
-      "Diez kilómetros por hora.",
-      "La longitud de una cuerda."
+      "mas pequena que una milla terrestre o estatuaria",
+      "igual a un minuto de longitud",
+      "igual a un minuto de latitud",
+      "usado a lo largo de rutas o pistas costeras"
     ],
-    correctAnswer: 1,
-    hint: "En navegación, un nudo es la velocidad de una milla náutica por hora."
+    correctAnswer: 2,
+    hint: "Se relaciona con una medida angular sobre la tierra.",
+    imageUrl: ""
   },
   {
     id: 62,
-    question: "¿Cuántos pies tiene una milla náutica aproximadamente?",
+    question: "Un nudo se define como:",
     options: [
-      "5,280 pies.",
-      "6,076 pies.",
-      "3,000 pies.",
-      "10,000 pies."
+      "algo que usted no deberia hacer",
+      "una milla nautica por hora",
+      "la velocidad de un bote cuando no es afectado por la corriente",
+      "una milla terrestre o estatuaria por hora"
     ],
     correctAnswer: 1,
-    hint: "Una milla náutica es más larga que una milla terrestre - unos 6,076 pies."
+    hint: "Es una unidad de velocidad nautica.",
+    imageUrl: ""
   },
   {
     id: 63,
-    question: "¿Qué es el 'Francobordo' (Freeboard)?",
+    question: "El proposito principal de la Ley 430 es:",
     options: [
-      "La parte del barco bajo el agua.",
-      "La distancia desde la línea de flotación hasta la cubierta o regala.",
-      "El costo de estacionar el barco.",
-      "Un tipo de vela."
+      "garantizar a la ciudadania el disfrute de playas, lagos y lagunas, dentro de un marco de seguridad",
+      "fijar derechos a pagar por la numeracion e inscripcion de las embarcaciones de motor",
+      "fijar los derechos a pagar por el uso de vehiculos de campo traviesa",
+      "penalizar a toda persona que incurra en un delito menos grave segun lo establece la Ley 430"
     ],
-    correctAnswer: 1,
-    hint: "Es la altura de la embarcación que está 'libre' sobre el agua - no sumergida."
+    correctAnswer: 0,
+    hint: "La ley combina acceso y seguridad.",
+    imageUrl: ""
   },
   {
     id: 64,
-    question: "¿Cuál es el uso de un 'Bichero' (Boat hook)?",
+    question: "Que velocidad maxima debe mantener una embarcacion cuando navega dentro de los 150 pies paralelos a la costa u orilla en area NO demarcada para banistas?",
     options: [
-      "Para pescar tiburones.",
-      "Para ayudar a atracar o recuperar objetos del agua.",
-      "Para limpiar el motor.",
-      "Como remo de emergencia."
+      "5 mph",
+      "10 mph",
+      "25 mph",
+      "no hay limite de velocidad establecido"
     ],
     correctAnswer: 1,
-    hint: "Es una vara larga con gancho que te ayuda a alcanzar el muelle o agarrar cosas en el agua."
+    hint: "La opcion correcta es el limite intermedio.",
+    imageUrl: ""
   },
   {
     id: 65,
-    question: "¿Qué tipo de embarcación tiene prioridad en un canal estrecho?",
+    question: "Las profundidades en una carta pueden estar en pies, metros, o brazas. La unidad de medida se puede determinar de:",
     options: [
-      "La más pequeña y ágil.",
-      "Una embarcación grande que solo puede navegar con seguridad dentro del canal.",
-      "El que vaya más rápido.",
-      "Cualquiera que use remos."
+      "Comunicado a los Marineros (\"Notice to Mariners\")",
+      "Almanaque Nautico (\"Nautical Almanac\")",
+      "el bloque donde esta el titulo de la carta",
+      "lectura del medidor o metro de brazas (\"Fathometer Readings\")"
     ],
-    correctAnswer: 1,
-    hint: "Los barcos grandes tienen menos capacidad de maniobra en canales estrechos."
+    correctAnswer: 2,
+    hint: "Ese dato aparece en la informacion principal de la carta.",
+    imageUrl: ""
   },
   {
     id: 66,
-    question: "¿Qué debe hacer si ve una luz verde y una blanca en la noche?",
+    question: "Los conocimientos de navegacion o pilotaje o cabotaje te daran DOS destrezas importantes: 1) la habilidad de seleccionar la ruta mas segura de un sitio a otro, y 2) la habilidad de:",
     options: [
-      "Se acerca a un velero por babor.",
-      "Se acerca al lado de estribor de una embarcación de motor.",
-      "Se acerca a un barco anclado.",
-      "Debe detenerse inmediatamente."
+      "encontrar el sitio mas cercano para abastecerse de combustible",
+      "determinar las condiciones del tiempo para el dia en el mar",
+      "determinar tu posicion en cualquier momento",
+      "predecir el consumo de combustible"
     ],
-    correctAnswer: 1,
-    hint: "Verde = estribor (derecha). Estás viendo el lado derecho de otra embarcación."
+    correctAnswer: 2,
+    hint: "La otra destreza es saber ubicarse.",
+    imageUrl: ""
   },
   {
     id: 67,
-    question: "¿Qué significa 'Estar al garete' (Adrift)?",
+    question: "Cuando descansas o confias en tu GPS para darte la posicion actual, es importante:",
     options: [
-      "Estar bien amarrado.",
-      "Estar sin control, moviéndose solo por el viento o corriente.",
-      "Estar navegando a vela.",
-      "Estar hundido."
+      "mantener una velocidad constante",
+      "comparar lo que ves alrededor tuyo con tu carta para estar seguro donde te encuentras y para verificar tu GPS",
+      "limpiar las conexiones electricas para prevenir la corrosion",
+      "girar usando los rumbos magneticos"
     ],
     correctAnswer: 1,
-    hint: "Estar 'a la deriva' o 'al garete' significa flotar sin control, sin motor ni ancla."
+    hint: "Conviene confirmar el GPS con referencias externas.",
+    imageUrl: ""
   },
   {
     id: 68,
-    question: "¿Cuál es la función del 'Arraigo' (Cleat)?",
+    question: "En la navegacion de una canoa, kayak u otro bote de remo, tu debes:",
     options: [
-      "Medir la profundidad.",
-      "Asegurar las cuerdas (cabos) de amarre.",
-      "Decorar la proa.",
-      "Servir de asiento."
+      "quedarte en el centro del canal porque tu tienes el derecho de paso",
+      "quedarte alejado de la costa cuando hallan rocas o escombros",
+      "estar consciente de que puede que no seas visible para el capitan o tripulacion de una embarcacion de mayor tamano",
+      "amarrar tu salvavidas al bote, de forma segura, de tal forma que este no se extravie o se pierda"
     ],
-    correctAnswer: 1,
-    hint: "Los cleats son las piezas de metal con forma especial donde atas las cuerdas."
+    correctAnswer: 2,
+    hint: "Piensa en como te ven los botes grandes.",
+    imageUrl: ""
   },
   {
     id: 69,
-    question: "¿Qué es el 'Pantoque' (Bilge)?",
+    question: "Ves una bandera ondeando desde una boya flotando en el agua. La bandera es roja con una linea o franja diagonal blanca. Esto indica:",
     options: [
-      "La parte más alta del mástil.",
-      "La parte más baja del interior del casco donde se acumula el agua.",
-      "El timón.",
-      "La cabina del capitán."
+      "agua segura en el lado sur de la boya",
+      "un buen sitio para anclar",
+      "un buzo bajo el agua",
+      "el centro del canal con agua segura a todo su alrededor"
     ],
-    correctAnswer: 1,
-    hint: "Es el 'sótano' del barco donde el agua se acumula en el fondo."
+    correctAnswer: 2,
+    hint: "La bandera advierte actividad bajo la superficie.",
+    imageUrl: ""
   },
   {
     id: 70,
-    question: "¿Para qué sirve una 'Bomba de achique' (Bilge pump)?",
+    question: "Operar una embarcacion bajo __________ de alcohol en la sangre se considera una violacion a la Ley 430, segun enmendada.",
     options: [
-      "Para inflar los chalecos.",
-      "Para sacar el agua que se acumula en el pantoque.",
-      "Para dar presión a la ducha.",
-      "Para enfriar el motor."
+      "0.05%",
+      "0.08%",
+      "0.10%",
+      "0.15%"
     ],
     correctAnswer: 1,
-    hint: "La bomba de achique saca el agua acumulada del fondo del barco."
+    hint: "La cifra coincide con el limite legal comun.",
+    imageUrl: ""
   },
   {
     id: 71,
-    question: "¿Qué es un 'Waypoints' en navegación GPS?",
+    question: "Se considera una actividad prohibida segun lo establece la Ley de Navegacion y Seguridad Acuatica de Puerto Rico (Ley 430):",
     options: [
-      "Un tipo de pez.",
-      "Coordenadas geográficas grabadas para marcar una posición o ruta.",
-      "El nombre de un fabricante de botes.",
-      "Una señal de tráfico marítimo."
+      "nadar en un area demarcada para banistas",
+      "amarrar una embarcacion a las boyas del area demarcada para banistas",
+      "operar una embarcacion en estado de embriaguez",
+      "alternativas b y c son correctas"
     ],
-    correctAnswer: 1,
-    hint: "Son puntos de referencia que guardas en tu GPS para marcar lugares importantes."
+    correctAnswer: 3,
+    hint: "La clave es identificar que dos opciones aplican.",
+    imageUrl: ""
   },
   {
     id: 72,
-    question: "¿Qué es 'Abatir' (Leeway)?",
+    question: "Cualquier agente del orden publico podra detener y abordar cualquier embarcacion, nave, vehiculo de navegacion o vehiculo de campo traviesa, asi como poner bajo arresto a su operador cuando:",
     options: [
-      "Ir muy rápido.",
-      "El movimiento lateral de una embarcación causado por el viento.",
-      "Anclar correctamente.",
-      "Limpiar el casco."
+      "tuviese motivo fundado para creer que el mismo esta siendo utilizado en violacion a las disposiciones de ley",
+      "tuviese motivo fundado para creer que su operador esta manejando bajo los efectos de bebidas embriagantes o sustancias controladas",
+      "las alternativas a y b son correctas",
+      "ninguna de las alternativas son correctas"
     ],
-    correctAnswer: 1,
-    hint: "El viento lateral empuja la embarcación hacia un lado - ese movimiento es el abatimiento."
+    correctAnswer: 2,
+    hint: "La opcion correcta une dos condiciones validas.",
+    imageUrl: ""
   },
   {
     id: 73,
-    question: "¿Cuál es el propósito de un 'Ánodo de sacrificio'?",
+    question: "Las areas reservadas para banistas son aquellas:",
     options: [
-      "Como amuleto de buena suerte.",
-      "Para proteger las partes metálicas del motor de la corrosión galvánica.",
-      "Para pesar más el bote.",
-      "Para mejorar la estética."
+      "delimitadas exclusivamente para el bano y areas aledanas",
+      "donde se observan personas nadando",
+      "donde se permite anclar embarcaciones",
+      "todas las alternativas son correctas"
     ],
-    correctAnswer: 1,
-    hint: "Se 'sacrifica' corroyéndose él para proteger otras partes metálicas más importantes."
+    correctAnswer: 0,
+    hint: "La definicion depende de su delimitacion.",
+    imageUrl: ""
   },
   {
     id: 74,
-    question: "¿Qué significa 'Trim' en una embarcación de motor?",
+    question: "El anclaje de una embarcacion se debe observar a:",
     options: [
-      "El color de la pintura.",
-      "El ángulo del motor respecto al espejo de popa para nivelar la embarcación.",
-      "Cortar el césped del muelle.",
-      "La limpieza de las velas."
+      "13 pies paralelos a la linea de la costa u orilla",
+      "14 pies paralelos a la linea de la costa u orilla",
+      "15 pies paralelos a la costa u orilla",
+      "20 pies paralelos de la costa u orilla"
     ],
-    correctAnswer: 1,
-    hint: "Ajustar el trim cambia el ángulo del motor para optimizar el desempeño."
+    correctAnswer: 2,
+    hint: "La distancia correcta es la opcion central mayor.",
+    imageUrl: ""
   },
   {
     id: 75,
-    question: "¿Qué es el 'Paso' (Pitch) de una hélice?",
+    question: "El operador y los pasajeros de una motora acuatica tienen que:",
     options: [
-      "El diámetro de la hélice.",
-      "La distancia teórica que avanza la hélice en una revolución completa.",
-      "El material de la hélice.",
-      "La velocidad de rotación."
+      "vestir un salvavidas si nacio despues del 1ro. de julio de 1972",
+      "vestir un salvavidas si es menor de 12 anos",
+      "no tienen que vestir salvavidas",
+      "vestir un salvavidas mientras la motora acuatica se encuentre en movimiento"
     ],
-    correctAnswer: 1,
-    hint: "Como un tornillo, el 'paso' es cuánto avanzaría la hélice en cada vuelta completa."
-  },
-  {
-    id: 76,
-    question: "¿Qué debe hacer si su motor se incendia?",
-    options: [
-      "Abrir la tapa del motor para ver mejor.",
-      "Cortar el suministro de combustible y usar el extintor.",
-      "Echarle gasolina para apagarlo.",
-      "Nadar lejos y dejar el bote solo."
-    ],
-    correctAnswer: 1,
-    hint: "Primero elimina el combustible, luego apaga el fuego con el extintor apropiado."
-  },
-  {
-    id: 77,
-    question: "¿Qué es un 'Aparato de gobierno' (Steering gear)?",
-    options: [
-      "El GPS.",
-      "El sistema que conecta el volante con el timón o motor.",
-      "La cocina del barco.",
-      "El equipo de pesca."
-    ],
-    correctAnswer: 1,
-    hint: "Es el sistema mecánico que traduce el movimiento del volante en dirección del barco."
-  },
-  {
-    id: 78,
-    question: "¿Qué indica una boya con franjas horizontales rojas y verdes?",
-    options: [
-      "Una bifurcación en el canal; el color de arriba indica el canal preferido.",
-      "Zona de peligro absoluto.",
-      "Estacionamiento para botes.",
-      "Área de esquí acuático."
-    ],
-    correctAnswer: 0,
-    hint: "Cuando el canal se divide, el color superior te dice cuál es el camino preferido."
-  },
-  {
-    id: 79,
-    question: "¿Qué es la 'Manga' (Beam) de una embarcación?",
-    options: [
-      "El largo total.",
-      "El ancho máximo de la embarcación.",
-      "Un tipo de motor.",
-      "La profundidad del agua."
-    ],
-    correctAnswer: 1,
-    hint: "La manga es la medida del ancho más amplio del barco."
-  },
-  {
-    id: 80,
-    question: "¿Qué es la 'Estanqueidad'?",
-    options: [
-      "El color del agua.",
-      "La capacidad de un casco o estructura para evitar que entre agua.",
-      "Un tipo de pez.",
-      "La velocidad del viento."
-    ],
-    correctAnswer: 1,
-    hint: "'Estanco' significa hermético, que no deja pasar agua."
-  },
-  {
-    id: 81,
-    question: "¿Qué es un 'Defensa' (Fender)?",
-    options: [
-      "Un abogado marítimo.",
-      "Un cojín o parachoques para proteger el casco contra el muelle u otros botes.",
-      "El parachoques de un auto.",
-      "Una luz de navegación."
-    ],
-    correctAnswer: 1,
-    hint: "Son los 'cojines' que cuelgas del lado del barco para que no se raye al atracar."
-  },
-  {
-    id: 82,
-    question: "¿Qué es 'Bornear' (Swinging)?",
-    options: [
-      "Bailar en cubierta.",
-      "El giro de una embarcación anclada alrededor de su ancla por viento o corriente.",
-      "Pescar con red.",
-      "Cambiar de capitán."
-    ],
-    correctAnswer: 1,
-    hint: "Cuando estás anclado, el barco 'baila' alrededor del ancla con el viento."
-  },
-  {
-    id: 83,
-    question: "¿Cuál es la función del 'Espejo de popa' (Transom)?",
-    options: [
-      "Reflejar la luz del sol.",
-      "La parte plana de la popa donde se suelen montar los motores fueraborda.",
-      "Servir de ventana al mar.",
-      "Sujetar el mástil."
-    ],
-    correctAnswer: 1,
-    hint: "Es la 'pared' trasera plana del barco donde se atornilla el motor."
-  },
-  {
-    id: 84,
-    question: "¿Qué es la 'Escora' (Heel)?",
-    options: [
-      "La parte trasera del pie.",
-      "La inclinación lateral de una embarcación, común en veleros.",
-      "Un tipo de ancla.",
-      "La velocidad máxima."
-    ],
-    correctAnswer: 1,
-    hint: "Los veleros se 'inclinan' hacia un lado con el viento - esa inclinación es la escora."
-  },
-  {
-    id: 85,
-    question: "¿Qué es un 'Bichero' o 'Boathook'?",
-    options: [
-      "Un dispositivo para atrapar peces.",
-      "Una vara con punta y gancho para ayudar en el atraque.",
-      "Un tipo de nudo.",
-      "Una parte del timón."
-    ],
-    correctAnswer: 1,
-    hint: "Es una herramienta esencial para alcanzar el muelle o agarrar cuerdas desde lejos."
+    correctAnswer: 3,
+    hint: "La exigencia aplica mientras esta operando.",
+    imageUrl: ""
   }
 ];
 
 /**
- * FUNCIÓN PARA SELECCIONAR PREGUNTAS ALEATORIAS
- * 
- * Esta función toma el array completo de 85 preguntas y devuelve
- * 75 preguntas seleccionadas aleatoriamente para cada intento del examen.
- * 
- * @param count - Número de preguntas a seleccionar (default: 75)
- * @returns Array de preguntas aleatorias
+ * Retorna el banco completo de 75 preguntas en orden aleatorio (Fisher-Yates).
+ * Si se pide menos de 75, solo devuelve ese prefijo del arreglo mezclado.
+ *
+ * Nota: el examen oficial usa este orden aleatorio; la practica NO lo usa
+ * (la practica siempre muestra las primeras 10 en orden fijo via slice(0,10)).
  */
 export function getRandomQuestions(count: number = 75): ExamQuestion[] {
-  // Crear una copia del array original para no modificarlo
   const shuffled = [...examQuestions];
-  
-  // Algoritmo de Fisher-Yates para mezclar aleatoriamente
-  // Este es el método más eficiente y justo de aleatorización
   for (let i = shuffled.length - 1; i > 0; i--) {
-    // Generar un índice aleatorio entre 0 e i (inclusive)
     const j = Math.floor(Math.random() * (i + 1));
-    
-    // Intercambiar elementos en las posiciones i y j
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  
-  // Devolver solo las primeras 'count' preguntas del array mezclado
   return shuffled.slice(0, count);
 }

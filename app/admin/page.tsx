@@ -5,8 +5,9 @@
  *
  * Pestañas:
  * - Matrículas: tabla con filtros, detalles, tracking number
- * - Exámenes: historial de intentos
+ * - Examen Oficial: historial de intentos del examen OFICIAL (la práctica no se persiste)
  * - Preguntas Falladas: top 10 preguntas con más errores
+ * - Banco de Preguntas: lista de las 75 preguntas con subida/baja de imagenes
  * - Configuración: mes y año del curso
  */
 
@@ -18,7 +19,8 @@ import {
   Lock, Users, AlertTriangle,
   Eye, ClipboardList,
   LogOut, Settings, X, Download, Save,
-  Package, FileText
+  Package, FileText,
+  BookOpen, Image as ImageIcon, Upload, Trash2, Loader2
 } from 'lucide-react';
 
 // --- Tipos de datos ---
@@ -81,6 +83,19 @@ interface FailedQuestion {
   fail_count: number;
 }
 
+// Pregunta completa del banco (como la devuelve /api/admin/questions).
+interface BankQuestion {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_index: number;
+  hint: string;
+  image_url: string | null;
+}
+
 /** Compara el estado guardado en BD (puede variar mayúsculas) */
 function estadoEsPagado(status: string | null | undefined) {
   return (status || '').toLowerCase().trim() === 'paid';
@@ -106,7 +121,15 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Navegación y filtros
-  const [activeTab, setActiveTab] = useState<'registrations' | 'exams' | 'questions' | 'config'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'exams' | 'questions' | 'bank' | 'config'>('registrations');
+
+  // Banco de preguntas (pestana "Banco de Preguntas")
+  const [bankQuestions, setBankQuestions] = useState<BankQuestion[]>([]);
+  const [bankLoading, setBankLoading] = useState(false);
+  const [bankError, setBankError] = useState<string | null>(null);
+  const [selectedBankQuestion, setSelectedBankQuestion] = useState<BankQuestion | null>(null);
+  const [uploadingQuestionId, setUploadingQuestionId] = useState<number | null>(null);
+  const [deletingQuestionId, setDeletingQuestionId] = useState<number | null>(null);
   const [filterMonth, setFilterMonth] = useState('Todos');
   const [filterYear, setFilterYear] = useState('Todos');
   /** Mensaje si la API de matrículas falla (antes la lista quedaba vacía sin explicación) */
@@ -189,17 +212,25 @@ export default function AdminPage() {
       // Matrículas (via API segura)
       await loadRegistrations();
 
-      // Exámenes (tabla pública)
+      // Examenes: SOLO intentos de tipo 'oficial'.
+      // El examen de practica no se persiste nunca (es anonimo y efimero),
+      // por lo que cualquier fila de 'practica' seria historica pre-migracion
+      // y de todos modos se borro en migracion-v4-banco-75.sql.
       const { data: attempts } = await supabase
         .from('exam_attempts')
         .select('*')
+        .eq('exam_type', 'oficial')
         .order('created_at', { ascending: false });
 
-      // Respuestas incorrectas para preguntas más falladas
+      // Respuestas incorrectas para "preguntas mas falladas".
+      // Restringimos por inner-join a intentos oficiales: asi aunque
+      // quedaran respuestas historicas de practica, no contaminan el
+      // analisis pedagogico de las preguntas del examen real.
       const { data: wrongAnswers } = await supabase
         .from('exam_attempt_answers')
-        .select('question_id')
-        .eq('is_correct', false);
+        .select('question_id, exam_attempts!inner(exam_type)')
+        .eq('is_correct', false)
+        .eq('exam_attempts.exam_type', 'oficial');
 
       // Preguntas del examen
       const { data: questions } = await supabase
@@ -299,6 +330,87 @@ export default function AdminPage() {
     }
   };
 
+  // --- Banco de preguntas: cargar listado completo ---
+  const loadBankQuestions = async () => {
+    setBankLoading(true);
+    setBankError(null);
+    try {
+      const res = await fetch('/api/admin/questions');
+      const data = await res.json();
+      if (!res.ok) {
+        setBankError(data?.error || 'No se pudo cargar el banco de preguntas.');
+        setBankQuestions([]);
+      } else {
+        setBankQuestions((data.questions || []) as BankQuestion[]);
+      }
+    } catch (err: any) {
+      setBankError('Error de conexion al cargar el banco.');
+      setBankQuestions([]);
+    } finally {
+      setBankLoading(false);
+    }
+  };
+
+  // Al activar la pestana "Banco de Preguntas" por primera vez, cargamos.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (activeTab === 'bank' && bankQuestions.length === 0 && !bankLoading) {
+      loadBankQuestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTab]);
+
+  // --- Banco: subir imagen para una pregunta especifica ---
+  const uploadQuestionImage = async (questionId: number, file: File) => {
+    setUploadingQuestionId(questionId);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`/api/admin/questions/${questionId}/image`, {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        alert(data?.error || 'No se pudo subir la imagen.');
+        return;
+      }
+      // Refresca el listado local y el modal si estaba abierto
+      setBankQuestions(prev => prev.map(q => q.id === questionId ? { ...q, image_url: data.image_url } : q));
+      if (selectedBankQuestion?.id === questionId) {
+        setSelectedBankQuestion(prev => prev ? { ...prev, image_url: data.image_url } : null);
+      }
+    } catch (err: any) {
+      alert('Error de conexion al subir la imagen.');
+    } finally {
+      setUploadingQuestionId(null);
+    }
+  };
+
+  // --- Banco: eliminar imagen de una pregunta ---
+  const deleteQuestionImage = async (questionId: number) => {
+    if (!confirm('Eliminar la imagen de esta pregunta?')) return;
+    setDeletingQuestionId(questionId);
+    try {
+      const res = await fetch(`/api/admin/questions/${questionId}/image`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        alert(data?.error || 'No se pudo eliminar la imagen.');
+        return;
+      }
+      setBankQuestions(prev => prev.map(q => q.id === questionId ? { ...q, image_url: '' } : q));
+      if (selectedBankQuestion?.id === questionId) {
+        setSelectedBankQuestion(prev => prev ? { ...prev, image_url: '' } : null);
+      }
+    } catch (err: any) {
+      alert('Error de conexion al eliminar la imagen.');
+    } finally {
+      setDeletingQuestionId(null);
+    }
+  };
+
   // --- Logout ---
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -363,8 +475,9 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-2 mb-8">
           {[
             { id: 'registrations' as const, label: 'Matrículas', icon: Users },
-            { id: 'exams' as const, label: 'Exámenes', icon: ClipboardList },
+            { id: 'exams' as const, label: 'Examen Oficial', icon: ClipboardList },
             { id: 'questions' as const, label: 'Preguntas Falladas', icon: AlertTriangle },
+            { id: 'bank' as const, label: 'Banco de Preguntas', icon: BookOpen },
             { id: 'config' as const, label: 'Configuración', icon: Settings },
           ].map(tab => (
             <button
@@ -652,18 +765,26 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ===== EXÁMENES ===== */}
+        {/* ===== INTENTOS DE EXAMEN OFICIAL ===== */}
+        {/*
+          Solo se muestran intentos del examen OFICIAL. El examen de practica
+          no se persiste (es anonimo y efimero), por lo que aqui nunca
+          aparecera actividad de practica.
+        */}
         {activeTab === 'exams' && (
           <div className="space-y-6">
+            <div className="bg-navy/5 border border-navy/20 rounded-lg p-4 text-sm text-navy/80">
+              Solo se muestran intentos del <strong>examen oficial</strong>. El examen
+              de practica es anonimo y no se guarda en la base de datos.
+            </div>
             {examAttempts.length === 0 ? (
-              <div className="card text-center text-gray-500 py-12">No hay intentos de examen registrados aún.</div>
+              <div className="card text-center text-gray-500 py-12">No hay intentos de examen oficial registrados aún.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full bg-white rounded-xl shadow-md overflow-hidden">
                   <thead className="bg-navy text-white">
                     <tr>
                       <th className="py-4 px-6 text-left">Estudiante</th>
-                      <th className="py-4 px-6 text-left">Tipo</th>
                       <th className="py-4 px-6 text-center">Correctas</th>
                       <th className="py-4 px-6 text-center">Incorrectas</th>
                       <th className="py-4 px-6 text-center">Porcentaje</th>
@@ -675,9 +796,6 @@ export default function AdminPage() {
                     {examAttempts.map(attempt => (
                       <tr key={attempt.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-4 px-6 font-semibold">{attempt.student_name}</td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${attempt.exam_type === 'oficial' ? 'bg-navy/10 text-navy' : 'bg-blue-100 text-blue-600'}`}>{attempt.exam_type}</span>
-                        </td>
                         <td className="py-4 px-6 text-center text-maritime-green font-bold">{attempt.correct_answers}</td>
                         <td className="py-4 px-6 text-center text-maritime-red font-bold">{attempt.incorrect_answers}</td>
                         <td className="py-4 px-6 text-center font-bold">{attempt.percentage}%</td>
@@ -722,6 +840,217 @@ export default function AdminPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== BANCO DE PREGUNTAS ===== */}
+        {/*
+          Esta pestana muestra las 75 preguntas del examen con su ID, respuesta
+          correcta y miniatura de imagen (si tiene). Permite:
+          - Abrir una pregunta para ver su detalle completo.
+          - Subir/reemplazar la imagen asociada (la imagen se guarda en
+            el bucket exam-images de Supabase Storage).
+          - Eliminar la imagen asociada.
+          El texto y las opciones son solo lectura desde aqui: para editarlos
+          se usa el SQL Editor de Supabase (es intencional para evitar cambios
+          accidentales en las preguntas del examen).
+        */}
+        {activeTab === 'bank' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-navy flex items-center gap-2">
+                  <BookOpen className="w-6 h-6" /> Banco de Preguntas
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  75 preguntas del examen oficial. Puedes subir o reemplazar la imagen
+                  de cada pregunta desde aqui.
+                </p>
+              </div>
+              <button
+                onClick={loadBankQuestions}
+                disabled={bankLoading}
+                className="btn-secondary text-sm disabled:opacity-50"
+              >
+                {bankLoading ? 'Cargando...' : 'Recargar'}
+              </button>
+            </div>
+
+            {bankError && (
+              <div className="bg-maritime-red/10 border border-maritime-red text-maritime-red rounded-lg p-4 text-sm">
+                {bankError}
+              </div>
+            )}
+
+            {bankLoading && bankQuestions.length === 0 ? (
+              <div className="card text-center py-12 text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                Cargando banco de preguntas...
+              </div>
+            ) : bankQuestions.length === 0 ? (
+              <div className="card text-center text-gray-500 py-12">
+                No hay preguntas en el banco. Ejecuta la migracion SQL primero.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full bg-white rounded-xl shadow-md overflow-hidden">
+                  <thead className="bg-navy text-white">
+                    <tr>
+                      <th className="py-4 px-6 text-center w-16">ID</th>
+                      <th className="py-4 px-6 text-left">Pregunta</th>
+                      <th className="py-4 px-6 text-center w-32">Respuesta</th>
+                      <th className="py-4 px-6 text-center w-28">Imagen</th>
+                      <th className="py-4 px-6 text-center w-40">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankQuestions.map(q => {
+                      const correctLetter = ['A', 'B', 'C', 'D'][q.correct_index] || '?';
+                      const hasImg = !!(q.image_url && q.image_url.trim() !== '');
+                      return (
+                        <tr key={q.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-4 px-6 text-center font-bold text-navy">#{q.id}</td>
+                          <td className="py-4 px-6 text-sm text-gray-800 max-w-xl">
+                            <p className="line-clamp-2">{q.question}</p>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-maritime-green/20 text-maritime-green font-bold">
+                              {correctLetter}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            {hasImg ? (
+                              <img
+                                src={q.image_url || ''}
+                                alt={`Imagen pregunta ${q.id}`}
+                                className="w-16 h-16 object-cover rounded mx-auto border border-gray-200"
+                              />
+                            ) : (
+                              <span className="text-xs text-gray-400">Sin imagen</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <button
+                              onClick={() => setSelectedBankQuestion(q)}
+                              className="inline-flex items-center gap-1 text-sm text-navy hover:underline"
+                            >
+                              <Eye className="w-4 h-4" /> Ver detalles
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal de detalle de pregunta del banco */}
+        {selectedBankQuestion && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedBankQuestion(null)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-navy">
+                  Pregunta #{selectedBankQuestion.id}
+                </h3>
+                <button
+                  onClick={() => setSelectedBankQuestion(null)}
+                  className="p-2 hover:bg-gray-100 rounded"
+                  aria-label="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div>
+                  <h4 className="font-semibold text-navy mb-2">Pregunta</h4>
+                  <p className="text-gray-800 leading-relaxed">{selectedBankQuestion.question}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-navy mb-2">Opciones</h4>
+                  <ul className="space-y-2">
+                    {(['option_a', 'option_b', 'option_c', 'option_d'] as const).map((key, idx) => {
+                      const isCorrect = idx === selectedBankQuestion.correct_index;
+                      const letter = ['A', 'B', 'C', 'D'][idx];
+                      return (
+                        <li
+                          key={key}
+                          className={`p-3 rounded-lg border ${isCorrect ? 'bg-maritime-green/10 border-maritime-green' : 'bg-gray-50 border-gray-200'}`}
+                        >
+                          <strong>{letter})</strong> {selectedBankQuestion[key]}
+                          {isCorrect && (
+                            <span className="ml-2 text-xs font-bold text-maritime-green">
+                              CORRECTA
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-navy mb-2 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" /> Imagen
+                  </h4>
+                  {selectedBankQuestion.image_url && selectedBankQuestion.image_url.trim() !== '' ? (
+                    <div className="space-y-3">
+                      <img
+                        src={selectedBankQuestion.image_url}
+                        alt={`Imagen pregunta ${selectedBankQuestion.id}`}
+                        className="max-w-full max-h-[300px] object-contain rounded-lg border border-gray-200 mx-auto"
+                      />
+                      <button
+                        onClick={() => deleteQuestionImage(selectedBankQuestion.id)}
+                        disabled={deletingQuestionId === selectedBankQuestion.id}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-maritime-red text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {deletingQuestionId === selectedBankQuestion.id ? 'Eliminando...' : 'Eliminar imagen'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">Esta pregunta no tiene imagen asociada.</p>
+                  )}
+
+                  <div className="mt-4 bg-ice rounded-lg p-4">
+                    <label className="block text-sm font-semibold text-navy mb-2">
+                      Subir / reemplazar imagen
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png"
+                      disabled={uploadingQuestionId === selectedBankQuestion.id}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadQuestionImage(selectedBankQuestion.id, file);
+                        e.target.value = '';
+                      }}
+                      className="block text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      JPG o PNG, maximo 5 MB. Al subir una imagen nueva se
+                      reemplaza la anterior.
+                    </p>
+                    {uploadingQuestionId === selectedBankQuestion.id && (
+                      <p className="text-sm text-navy mt-2 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Subiendo...
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

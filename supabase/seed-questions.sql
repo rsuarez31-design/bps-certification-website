@@ -1,11 +1,15 @@
 -- ============================================================
--- SEMILLA DE PREGUNTAS DEL EXAMEN
+-- [DEPRECATED] SEMILLA HISTORICA DE 85 PREGUNTAS
 --
--- Este archivo inserta las 85 preguntas del examen de navegación
--- en la tabla exam_questions.
+-- Este archivo fue reemplazado por `migracion-v4-banco-75.sql`,
+-- que carga el banco oficial actual (75 preguntas), anade la
+-- columna `image_url` y crea el bucket `exam-images`.
 --
--- Para usarlo: pega este contenido en el "SQL Editor" de Supabase
--- DESPUÉS de haber ejecutado schema.sql.
+-- NO ejecutar este archivo en proyectos nuevos. Se mantiene solo
+-- como referencia historica del banco anterior de 85 preguntas.
+-- ============================================================
+--
+-- Contenido original (85 preguntas) a continuacion:
 -- ============================================================
 
 -- Primero limpiar la tabla por si ya tiene datos

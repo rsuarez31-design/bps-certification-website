@@ -2,7 +2,9 @@
  * PÁGINA DEL EXAMEN OFICIAL
  *
  * Examen de certificación bajo la Ley 430 de Puerto Rico.
- * 75 preguntas aleatorias de las 85 disponibles.
+ * Las 75 preguntas del banco en orden aleatorio (Fisher-Yates).
+ * El orden se re-mezcla en CADA intento: si el estudiante reintenta el
+ * examen, recibe otra permutación distinta de las mismas 75.
  *
  * Características:
  * - Requiere email (se valida contra matrícula pagada)
@@ -189,6 +191,10 @@ export default function ExamenPage() {
 
       setCargando(true);
       const todasLasPreguntas = await cargarPreguntas();
+      // IMPORTANTE: la mezcla corre dentro de esta funcion de inicio del examen.
+      // Cada intento (incluidos los reintentos dentro de las 24h) vuelve a pasar
+      // por aqui y genera una permutacion Fisher-Yates nueva de las 75 preguntas.
+      // No se cachea el orden en sessionStorage/localStorage a proposito.
       const selected = mezclarPreguntas(todasLasPreguntas, 75);
       setQuestions(selected);
       setTiempoRestante(3 * 60 * 60);

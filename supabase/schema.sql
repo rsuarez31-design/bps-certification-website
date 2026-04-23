@@ -9,7 +9,9 @@
 
 -- ----------------------------------------------------------
 -- TABLA: exam_questions (Preguntas del examen)
--- Guarda las 85 preguntas con sus opciones y respuesta correcta.
+-- Guarda las 75 preguntas del banco actual con sus opciones,
+-- respuesta correcta, pista y una imagen opcional.
+-- La columna image_url puede quedar vacia si la pregunta no tiene imagen.
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS exam_questions (
   id SERIAL PRIMARY KEY,
@@ -19,7 +21,8 @@ CREATE TABLE IF NOT EXISTS exam_questions (
   option_c TEXT NOT NULL,
   option_d TEXT NOT NULL,
   correct_index INT NOT NULL CHECK (correct_index BETWEEN 0 AND 3),
-  hint TEXT NOT NULL DEFAULT ''
+  hint TEXT NOT NULL DEFAULT '',
+  image_url TEXT NOT NULL DEFAULT ''
 );
 
 -- ----------------------------------------------------------

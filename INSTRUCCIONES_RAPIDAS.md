@@ -68,7 +68,7 @@
 | Inicio         | `http://localhost:3000`           | Pagina principal con info de Ley 430 |
 | Matricula      | `http://localhost:3000/matricula` | Formulario + pago Stripe             |
 | Practica       | `http://localhost:3000/practica`  | Examen de practica (10 preguntas)    |
-| Examen Oficial | `http://localhost:3000/examen`    | Examen de 75 preguntas               |
+| Examen Oficial | `http://localhost:3000/examen`    | Examen de 75 preguntas (orden aleatorio por intento) |
 | Admin          | `http://localhost:3000/admin`     | Panel administrativo (BPS/2026)      |
 
 
@@ -118,7 +118,7 @@ Ctrl + C
 | `app/practica/page.tsx`  | Examen de practica                 |
 | `app/examen/page.tsx`    | Examen oficial                     |
 | `app/admin/page.tsx`     | Panel administrativo               |
-| `data/examQuestions.ts`  | Las 85 preguntas del examen        |
+| `data/examQuestions.ts`  | Las 75 preguntas del examen (fallback local; la fuente de verdad es Supabase) |
 | `.env.local`             | Claves secretas (Supabase, Stripe) |
 | `supabase/schema.sql`    | Estructura de la base de datos     |
 

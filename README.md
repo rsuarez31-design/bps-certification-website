@@ -12,7 +12,7 @@ Incluye base de datos Supabase, pagos con Stripe, examen de practica, examen ofi
 - **Pagina Principal** - Diseno nautico moderno con informacion de la Ley 430
 - **Matricula Digital** - Formulario completo con pago por Stripe ($80 + $10 opcional)
 - **Examen de Practica** - 10 preguntas para prepararse, gratis
-- **Examen Oficial** - 75 preguntas aleatorias con regla "Intenta De Nuevo" tras 7 errores
+- **Examen Oficial** - 75 preguntas en orden aleatorio (re-mezcla en cada intento), con regla "Intenta De Nuevo" tras 10 errores
 - **Certificado Digital** - Generacion automatica al aprobar con confeti animado
 - **Panel Administrativo** - Estadisticas reales, matriculas pagadas/pendientes, historial de examenes
 
@@ -40,7 +40,7 @@ npm install
 
 1. Crea un proyecto en [https://supabase.com](https://supabase.com)
 2. Ve al "SQL Editor" y ejecuta `supabase/schema.sql` (crea las tablas)
-3. Ejecuta `supabase/seed-questions.sql` (carga las 85 preguntas)
+3. Ejecuta `supabase/migracion-v4-banco-75.sql` (limpia, crea el bucket y carga las 75 preguntas del banco actual)
 4. Ve a Settings > API y copia las claves
 
 ### 3. Configurar Stripe
@@ -98,10 +98,11 @@ bps-website/
 │   ├── supabase-client.ts            # Supabase para el navegador
 │   └── supabase-server.ts            # Supabase para el servidor
 ├── data/
-│   └── examQuestions.ts              # 85 preguntas del examen
+│   └── examQuestions.ts              # 75 preguntas del examen (fallback local)
 ├── supabase/                          # Archivos SQL
-│   ├── schema.sql                    # Esquema de tablas
-│   └── seed-questions.sql            # Datos iniciales de preguntas
+│   ├── schema.sql                        # Esquema de tablas
+│   ├── migracion-v4-banco-75.sql         # Migracion activa: 75 preguntas + bucket exam-images
+│   └── seed-questions.sql                # (DEPRECATED) carga historica de 85 preguntas
 ├── public/images/
 │   └── bps-logo.png                  # Logo de BPS
 ├── .env.local.example                 # Ejemplo de variables de entorno
@@ -137,7 +138,7 @@ bps-website/
 
 | Tabla                  | Descripcion                                           |
 | ---------------------- | ----------------------------------------------------- |
-| `exam_questions`       | 85 preguntas con opciones, respuesta correcta y pista |
+| `exam_questions`       | 75 preguntas con opciones, respuesta correcta, pista e imagen opcional |
 | `registrations`        | Matriculas con datos personales, pago y estado        |
 | `exam_attempts`        | Intentos de examen (practica y oficial)               |
 | `exam_attempt_answers` | Respuesta individual de cada pregunta                 |
@@ -159,9 +160,9 @@ bps-website/
 
 ## Reglas del Examen Oficial
 
-- **75 preguntas** aleatorias de un banco de 85
+- **75 preguntas** en orden aleatorio (re-mezcla en cada intento)
 - **80% para aprobar** (60 correctas minimo)
-- **Regla "Intenta De Nuevo":** Con 7+ incorrectas, si selecciona una respuesta incorrecta:
+- **Regla "Intenta De Nuevo":** Con 10+ incorrectas, si selecciona una respuesta incorrecta:
   - No se acepta
   - Muestra "Intenta De Nuevo"
   - Acepta la siguiente opcion diferente (aunque sea incorrecta)

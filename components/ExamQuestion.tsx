@@ -1,12 +1,17 @@
 /**
  * COMPONENTE DE PREGUNTA DEL EXAMEN
- * 
+ *
  * Este componente muestra una pregunta individual con sus opciones de respuesta.
  * Incluye:
+ * - Badge con el ID original de la pregunta (1-75) en la esquina superior derecha.
+ *   Este ID es una referencia estable para que el instructor sepa cual pregunta
+ *   del banco esta contestando el estudiante. NO cambia con el orden aleatorio.
+ * - Imagen opcional sobre el texto (solo si la pregunta tiene imageUrl definido).
+ *   Si no hay imagen, no se renderiza ningun elemento relacionado a imagenes.
  * - Texto de la pregunta
  * - 4 opciones de respuesta (a, b, c, d)
- * - Indicador visual de la opción seleccionada
- * - Sistema de pistas (hints) cuando está activado
+ * - Indicador visual de la opcion seleccionada
+ * - Sistema de pistas (hints) cuando esta activado
  */
 
 'use client';
@@ -39,19 +44,55 @@ export default function ExamQuestion({
    */
   const optionLetters = ['a', 'b', 'c', 'd'];
 
+  // Detecta si la pregunta tiene imagen asociada.
+  // Si no tiene, no se renderiza NADA relacionado a imagenes.
+  const hasImage = typeof question.imageUrl === 'string' && question.imageUrl.trim() !== '';
+
   return (
-    <div className="card">
-      {/* 
+    <div className="card relative">
+      {/*
+        ==================
+        BADGE DE ID DE PREGUNTA (esquina superior derecha)
+        ==================
+        Muestra el ID original (1-75) del banco de preguntas.
+        Este numero lo usa el instructor para identificar la pregunta
+        cuando un estudiante pide ayuda. No cambia con el orden aleatorio.
+      */}
+      <span
+        aria-label={`Identificador de pregunta ${question.id}`}
+        className="absolute top-3 right-4 text-xs font-semibold text-navy/50 select-none"
+      >
+        #{question.id}
+      </span>
+
+      {/*
         ==================
         ENCABEZADO DE LA PREGUNTA
         ==================
       */}
       <div className="mb-6">
-        {/* Número de pregunta */}
+        {/* Numero de pregunta */}
         <div className="text-sm font-semibold text-navy/60 mb-2">
           Pregunta {questionNumber} de {totalQuestions}
         </div>
-        
+
+        {/*
+          Imagen de la pregunta (SOLO si hay imageUrl).
+          Tamano controlado: max 600px ancho, max 400px alto, centrada,
+          object-contain para no distorsionar. En movil se ajusta al ancho.
+          Si la pregunta no tiene imagen, este bloque no se renderiza y la
+          pregunta se ve igual que antes de esta funcionalidad.
+        */}
+        {hasImage && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={question.imageUrl}
+              alt={`Imagen de la pregunta ${question.id}`}
+              className="max-w-full md:max-w-[600px] max-h-[400px] object-contain rounded-lg shadow-sm border border-gray-200"
+            />
+          </div>
+        )}
+
         {/* Texto de la pregunta */}
         <h2 className="text-2xl font-bold text-navy leading-relaxed">
           {question.question}

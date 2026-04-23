@@ -37,7 +37,7 @@ Antes de ejecutar el proyecto, necesitas crear cuentas en dos servicios:
 1. Ve a [https://supabase.com](https://supabase.com) y crea una cuenta gratuita
 2. Crea un nuevo proyecto
 3. Ve al "SQL Editor" y ejecuta el archivo `bps-website/supabase/schema.sql`
-4. Luego ejecuta `bps-website/supabase/seed-questions.sql` (para cargar las 85 preguntas)
+4. Luego ejecuta `bps-website/supabase/migracion-v4-banco-75.sql` (carga las 75 preguntas vigentes, anade la columna `image_url` y crea el bucket `exam-images`)
 5. Ve a Settings > API y copia:
   - La URL del proyecto
   - La clave "anon public"
@@ -132,8 +132,8 @@ Archivo: `COMO_INSTALAR_NODEJS.md`
 - Ver informacion del curso y la Ley 430
 - Completar matricula digital con pago por Stripe ($80 + $10 opcional por libro)
 - Tomar examen de practica (10 preguntas, gratis)
-- Tomar examen oficial de certificacion (75 preguntas aleatorias)
-- Recibir asistencia si tiene 7+ errores (regla "Intenta De Nuevo")
+- Tomar examen oficial de certificacion (75 preguntas en orden aleatorio, re-mezcladas en cada intento)
+- Recibir asistencia si tiene 10+ errores (regla "Intenta De Nuevo")
 - Obtener certificado digital al aprobar (80% minimo)
 
 ### Para Administradores:
@@ -179,8 +179,8 @@ Una vez que el sitio este corriendo, puedes visitar:
 
 `http://localhost:3000/examen`
 
-- 75 preguntas aleatorias de un banco de 85
-- Regla "Intenta De Nuevo" (con 7+ errores, bloquea respuestas incorrectas)
+- 75 preguntas del banco en orden aleatorio (re-mezcla en cada intento)
+- Regla "Intenta De Nuevo" (con 10+ errores, bloquea respuestas incorrectas)
 - Si no aprueba: muestra revision de preguntas falladas con "Tu contestacion" vs "Respuesta correcta"
 - Si aprueba: certificado digital con confeti
 
@@ -204,7 +204,7 @@ Una vez que el sitio este corriendo, puedes visitar:
 1. Landing Page (pagina principal)
 2. Matricula Digital con Stripe
 3. Examen de Practica (10 preguntas)
-4. Examen Oficial (75 preguntas con reglas especiales)
+4. Examen Oficial (75 preguntas en orden aleatorio, re-mezcladas por intento)
 5. Panel Administrativo (con datos de Supabase)
 
 **5 Componentes Reutilizables:**
@@ -229,13 +229,14 @@ Una vez que el sitio este corriendo, puedes visitar:
 **2 Archivos SQL:**
 
 1. `supabase/schema.sql` - Crea las tablas en Supabase
-2. `supabase/seed-questions.sql` - Carga las 85 preguntas del examen
+2. `supabase/migracion-v4-banco-75.sql` - Migracion activa: limpia practica, agrega image_url, carga las 75 preguntas y crea el bucket `exam-images`
 
-**85 Preguntas del Examen:**
+**75 Preguntas del Examen:**
 
 - Cada una con 4 opciones
 - Respuesta correcta marcada
-- Pista de ayuda incluida
+- Pista de ayuda almacenada (no visible en UI)
+- Imagen opcional (solo la pregunta #28 tiene imagen por ahora)
 
 ---
 

@@ -117,7 +117,7 @@ export default function HomePage() {
 
             <AnimatedSection delay={0.1} className="text-center">
               <div className="text-4xl sm:text-5xl font-bold text-navy mb-2">
-                <Counter end={85} />
+                <Counter end={75} />
               </div>
               <p className="text-gray-600 font-medium text-sm sm:text-base">Preguntas del Examen</p>
             </AnimatedSection>
