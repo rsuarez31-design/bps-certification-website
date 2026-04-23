@@ -39,7 +39,7 @@ export default function Footer() {
               </div>
               <p className="text-white/70 leading-relaxed mb-5 text-center">
                 Dedicados a promover la navegación segura y responsable en las aguas
-                de Puerto Rico desde hace más de 50 años.
+                de Puerto Rico desde hace más de 30 años.
               </p>
               <div className="flex justify-center">
                 <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
