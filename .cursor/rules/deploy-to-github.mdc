@@ -11,14 +11,14 @@ Cuando el usuario pida subir, publicar, hacer deploy o push de cambios al reposi
 
 - **URL**: `https://github.com/rsuarez31-design/bps-certification-website.git`
 - **Branch principal**: `main`
-- **Directorio del proyecto**: `/Users/ramonsuarez/Desktop/BPS/bps-website`
+- **Directorio del proyecto**: `/Users/ramonsuarez/Desktop/BPS`
 
 ## Pasos obligatorios
 
 ### 1. Verificar build antes de subir
 
 ```bash
-cd /Users/ramonsuarez/Desktop/BPS/bps-website && npm run build
+cd /Users/ramonsuarez/Desktop/BPS && npm run build
 ```
 
 - Si hay errores de compilación, **corregirlos antes de continuar**.

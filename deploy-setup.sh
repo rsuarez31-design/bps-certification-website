@@ -28,8 +28,8 @@ echo ""
 # Verificar que estemos en el directorio correcto
 if [ ! -f "package.json" ]; then
     echo "❌ Error: No se encontró package.json"
-    echo "Ejecuta este script desde el directorio bps-website:"
-    echo "  cd /Users/ramonsuarez/Desktop/BPS/bps-website"
+    echo "Ejecuta este script desde la raiz del proyecto:"
+    echo "  cd /Users/ramonsuarez/Desktop/BPS"
     echo "  bash deploy-setup.sh"
     echo ""
     exit 1

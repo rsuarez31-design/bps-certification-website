@@ -5,6 +5,8 @@
 **Tipo de revisión:** Auditoría de seguridad y calidad (10 agentes paralelos, solo lectura)  
 **Alcance:** `/Users/ramonsuarez/Desktop/BPS/bps-website/` (Next.js 14 App Router), esquema Supabase, workflows de CI/CD, documentación del repo.
 
+> **Nota de actualización (2026-04-23):** La carpeta anidada `bps-website/` fue consolidada con la raíz del repo. A partir de esta fecha, las rutas que aparecen en este documento como `bps-website/X` deben leerse simplemente como `X` desde la raíz del proyecto (`/Users/ramonsuarez/Desktop/BPS/`). El finding **H-9 (Repos Git anidados con el mismo remoto)** quedó resuelto en los commits `8fa9fa7` (elimina submódulo huérfano), `d337bf3` (fix footer) y `011e495` (docs sincronizados).
+
 ---
 
 ## Índice
