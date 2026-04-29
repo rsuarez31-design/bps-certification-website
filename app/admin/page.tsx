@@ -536,14 +536,18 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin/config');
       const data = await res.json();
+      if (!res.ok) {
+        const hint =
+          data.visibility_columns_missing && data.error
+            ? String(data.error)
+            : data.error || `Error ${res.status}`;
+        setConfigMessage(hint);
+        return;
+      }
       if (data.course_month) setConfigMonth(data.course_month);
       if (data.course_year) setConfigYear(String(data.course_year));
-      if (typeof data.official_exam_enabled === 'boolean') {
-        setOfficialExamEnabled(data.official_exam_enabled);
-      }
-      if (typeof data.enrollment_enabled === 'boolean') {
-        setEnrollmentEnabled(data.enrollment_enabled);
-      }
+      setOfficialExamEnabled(data.official_exam_enabled !== false);
+      setEnrollmentEnabled(data.enrollment_enabled !== false);
       setSavedConfigSnapshot({
         course_month: data.course_month || 'Enero',
         course_year: String(data.course_year ?? '2026'),
@@ -582,7 +586,11 @@ export default function AdminPage() {
         setConfigMessage('Configuración guardada exitosamente.');
         return true;
       }
-      setConfigMessage('Error al guardar: ' + (data.error || ''));
+      const saveErr =
+        data.visibility_columns_missing && data.error
+          ? String(data.error)
+          : data.error || `Error ${res.status}`;
+      setConfigMessage('Error al guardar: ' + saveErr);
       return false;
     } catch {
       setConfigMessage('Error de conexión al guardar.');

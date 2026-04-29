@@ -5,6 +5,8 @@
 
 import { cache } from 'react';
 import { supabaseAdmin } from '@/lib/supabase-server';
+import { isMissingSiteConfigVisibilityColumnsError } from '@/lib/site-config-errors';
+import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
 
 export type SiteVisibilityFlags = {
   enrollmentEnabled: boolean;
@@ -16,9 +18,19 @@ const DEFAULTS: SiteVisibilityFlags = {
   officialExamEnabled: true,
 };
 
+const RESTRICTIVE_WHEN_SCHEMA_MISSING: SiteVisibilityFlags = {
+  enrollmentEnabled: false,
+  officialExamEnabled: false,
+};
+
+const SITE_CONFIG_LOG_HINT_MISSING_COL =
+  'Se desactivan rutas sensibles hasta aplicar migración v7.';
+
 /**
  * Lee enrollment_enabled y official_exam_enabled desde Supabase.
- * Si falla la consulta o faltan columnas (migración pendiente), devuelve todo activado.
+ * - Valores en BD se interpretan con parseVisibilityBool (incl. string "false").
+ * - Columnas ausentes (migración v7): rutas sensibles desactivadas + log.
+ * - Otros errores de lectura: fallback "todo visible" + log (sitio usable si Supabase falla).
  */
 async function loadSiteVisibilityFlags(): Promise<SiteVisibilityFlags> {
   try {
@@ -29,23 +41,33 @@ async function loadSiteVisibilityFlags(): Promise<SiteVisibilityFlags> {
       .maybeSingle();
 
     if (error) {
-      // Migración v7 pendiente u otro error de esquema → comportamiento seguro (todo visible).
+      if (isMissingSiteConfigVisibilityColumnsError(error)) {
+        console.warn(
+          '[site-config-public] site_config sin columnas de visibilidad;',
+          SITE_CONFIG_LOG_HINT_MISSING_COL,
+          error,
+        );
+        return RESTRICTIVE_WHEN_SCHEMA_MISSING;
+      }
+      console.warn('[site-config-public] Error leyendo site_config; usando fallback visible.', error);
       return DEFAULTS;
     }
     if (!data) {
+      console.warn('[site-config-public] Sin fila site_config id=default; usando fallback visible.');
       return DEFAULTS;
     }
 
     const row = data as {
-      enrollment_enabled?: boolean | null;
-      official_exam_enabled?: boolean | null;
+      enrollment_enabled?: unknown;
+      official_exam_enabled?: unknown;
     };
 
     return {
-      enrollmentEnabled: row.enrollment_enabled !== false,
-      officialExamEnabled: row.official_exam_enabled !== false,
+      enrollmentEnabled: parseVisibilityBool(row.enrollment_enabled, true),
+      officialExamEnabled: parseVisibilityBool(row.official_exam_enabled, true),
     };
-  } catch {
+  } catch (e) {
+    console.warn('[site-config-public] Excepción en loadSiteVisibilityFlags; usando fallback visible.', e);
     return DEFAULTS;
   }
 }

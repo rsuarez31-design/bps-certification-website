@@ -7,6 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { hasValidAdminSession } from '@/lib/admin-session';
+import {
+  isMissingSiteConfigVisibilityColumnsError,
+  SITE_CONFIG_V7_MIGRATION_HINT,
+} from '@/lib/site-config-errors';
+import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,33 +22,30 @@ function parseBool(v: unknown, fallback: boolean): boolean {
   return fallback;
 }
 
+function visibilityMigrationResponse() {
+  return NextResponse.json(
+    {
+      error: SITE_CONFIG_V7_MIGRATION_HINT,
+      visibility_columns_missing: true,
+      migration_file: 'supabase/migracion-v7-site-config-visibility.sql',
+    },
+    { status: 503 },
+  );
+}
+
 export async function GET() {
   try {
-    let { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('site_config')
       .select('course_month, course_year, official_exam_enabled, enrollment_enabled')
       .eq('id', 'default')
       .maybeSingle();
 
-    if (error && String(error.message || '').includes('column')) {
-      const legacy = await supabaseAdmin
-        .from('site_config')
-        .select('course_month, course_year')
-        .eq('id', 'default')
-        .maybeSingle();
-      if (legacy.error) {
-        console.error('Error al leer config:', legacy.error);
-        return NextResponse.json({ error: legacy.error.message }, { status: 500 });
-      }
-      data = {
-        ...legacy.data,
-        official_exam_enabled: true,
-        enrollment_enabled: true,
-      } as typeof data;
-      error = null;
-    }
-
     if (error) {
+      if (isMissingSiteConfigVisibilityColumnsError(error)) {
+        console.error('[GET /api/admin/config]', error.message);
+        return visibilityMigrationResponse();
+      }
       console.error('Error al leer config:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -61,8 +63,8 @@ export async function GET() {
     return NextResponse.json({
       course_month: row.course_month,
       course_year: row.course_year,
-      official_exam_enabled: parseBool(row.official_exam_enabled, true),
-      enrollment_enabled: parseBool(row.enrollment_enabled, true),
+      official_exam_enabled: parseVisibilityBool(row.official_exam_enabled, true),
+      enrollment_enabled: parseVisibilityBool(row.enrollment_enabled, true),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
@@ -95,20 +97,13 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    let { error } = await supabaseAdmin
-      .from('site_config')
-      .update(patch)
-      .eq('id', 'default');
-
-    if (error && String(error.message || '').includes('column')) {
-      const { enrollment_enabled: _e, official_exam_enabled: _o, ...legacyPatch } = patch;
-      ({ error } = await supabaseAdmin
-        .from('site_config')
-        .update(legacyPatch)
-        .eq('id', 'default'));
-    }
+    const { error } = await supabaseAdmin.from('site_config').update(patch).eq('id', 'default');
 
     if (error) {
+      if (isMissingSiteConfigVisibilityColumnsError(error)) {
+        console.error('[PUT /api/admin/config] Columnas de visibilidad ausentes:', error.message);
+        return visibilityMigrationResponse();
+      }
       console.error('Error al actualizar config:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
