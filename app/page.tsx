@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import AnimatedSection from '@/components/AnimatedSection';
 import Counter from '@/components/Counter';
+import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (
     <div className="min-h-screen">
       {/* ============================================
@@ -70,10 +72,12 @@ export default function HomePage() {
 
           <AnimatedSection delay={0.3}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/matricula" className="btn-gold">
-                Inscríbete Ahora
-                <ChevronRight className="inline w-5 h-5 ml-1" />
-              </Link>
+              {enrollmentEnabled && (
+                <Link href="/matricula" className="btn-gold">
+                  Inscríbete Ahora
+                  <ChevronRight className="inline w-5 h-5 ml-1" />
+                </Link>
+              )}
               <Link
                 href="/practica"
                 className="bg-white/15 backdrop-blur-sm text-white px-8 py-4 rounded-xl
@@ -389,10 +393,12 @@ export default function HomePage() {
                   Tu aventura en las aguas del Caribe comienza hoy.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/matricula" className="btn-gold">
-                    Inscribirme Ahora
-                    <ChevronRight className="inline w-5 h-5 ml-1" />
-                  </Link>
+                  {enrollmentEnabled && (
+                    <Link href="/matricula" className="btn-gold">
+                      Inscribirme Ahora
+                      <ChevronRight className="inline w-5 h-5 ml-1" />
+                    </Link>
+                  )}
                   <Link
                     href="/practica"
                     className="bg-white/15 backdrop-blur-sm text-white px-8 py-4 rounded-xl

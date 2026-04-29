@@ -1,0 +1,181 @@
+# Next 14 Upgrade Plans
+
+## Objective
+Upgrade the project from Next.js 14 to a patched and supported version with minimal risk, preserving production stability.
+
+This document is a **runbook only**. It does not apply changes by itself.
+
+---
+
+## Current Baseline (from repository)
+- Next: `^14.2.0`
+- React / React DOM: `^18.3.1`
+- `eslint-config-next`: `^14.2.0`
+- TypeScript: `^5.3.3`
+- Next config is simple and low-risk (`reactStrictMode`, `images.domains: []`).
+- App uses App Router structure (`app/...`), admin APIs, Supabase and Stripe routes.
+
+---
+
+## Recommended Strategy
+Use a phased upgrade path:
+
+1. **Phase A (immediate risk reduction):** stay on Next 14, move to latest patched `14.x`.
+2. **Phase B (major migration):** upgrade to Next 15 + React 19 with codemods.
+3. **Phase C (optional, after stabilization):** evaluate Next 16.
+
+This avoids large breaking jumps while addressing security findings as early as possible.
+
+---
+
+## Branching and Safety
+Before any upgrade run:
+
+1. Create dedicated branch:
+   - `chore/next-upgrade-phase-a`
+2. Freeze unrelated feature work during upgrade window.
+3. Confirm clean baseline:
+   - `npm run lint`
+   - `npm run build`
+4. Keep rollback point:
+   - tag main before upgrade, e.g. `pre-next-upgrade-YYYYMMDD`.
+
+---
+
+## Test Gates (must pass in every phase)
+- `npm run lint`
+- `npm run build`
+- `npm run dev` manual smoke test
+
+Manual smoke checklist:
+- Home page loads
+- Enrollment flow (`/matricula`) works
+- Stripe flow routes respond (`/api/stripe/*`)
+- Exam pages load (`/examen`, `/practica`)
+- Admin login and tabs work (`/admin`)
+- Supabase reads/writes still function in expected flows
+
+---
+
+## Phase A - Patch within Next 14 (lowest risk, do first)
+Goal: reduce vulnerabilities without major framework breaking changes.
+
+### Steps
+1. Upgrade only patch-level package family:
+   - `next@14.x latest patch`
+   - matching `eslint-config-next@14.x`
+2. Keep React 18 in this phase.
+3. Run full test gates.
+4. Deploy to preview/staging first.
+5. Monitor production after release.
+
+### Acceptance Criteria
+- No breaking runtime changes
+- Build and lint pass
+- Security report improved vs current baseline
+
+### Rollback
+- Revert lockfile + package.json commit
+- Redeploy previous tag
+
+---
+
+## Phase B - Upgrade to Next 15 (major, planned window)
+Goal: move to a newer supported line and clear vulnerabilities requiring major upgrade.
+
+### Known Breaking Areas (official guide highlights)
+1. **Async Request APIs**:
+   - `cookies()`, `headers()`, `draftMode()` become async in many callsites.
+2. **`params` / `searchParams` behavior** updates in app entries.
+3. **Fetch and Route Handler caching defaults changed**:
+   - GET route handlers are no longer cached by default.
+4. **React 19 minimum** in Next 15 path.
+
+### Steps
+1. New branch:
+   - `chore/next15-upgrade`
+2. Run codemod in dry-run first:
+   - `npx @next/codemod@canary upgrade latest --dry`
+3. Run codemod for real and review diffs carefully.
+4. Upgrade dependencies together:
+   - `next`, `react`, `react-dom`, `eslint-config-next`
+   - `@types/react`, `@types/react-dom` (if needed)
+5. Search and resolve async API callsites:
+   - `cookies(`, `headers(`, `draftMode(`, `params`, `searchParams`
+6. Validate route caching expectations for API routes.
+7. Run test gates + manual smoke checklist.
+8. Deploy preview and run admin/exam/payment end-to-end checks.
+
+### High-Risk Focus Areas in this codebase
+- Admin panel data loading and API route behavior (`app/admin/page.tsx`, `app/api/admin/*`)
+- Exam routes and Supabase requests
+- Stripe checkout/webhook/confirm-session routes
+
+### Acceptance Criteria
+- No TypeScript errors
+- No regressions in enrollment/admin/exam flows
+- No unexpected caching behavior
+
+### Rollback
+- Hard rollback via git revert of upgrade PR
+- Redeploy last production deployment
+
+---
+
+## Phase C - Optional Next 16 (only after stable Next 15)
+Do this only when:
+- Phase B has been stable in production for at least one release cycle.
+
+### Considerations
+1. Turbopack defaults and related build behavior
+2. `middleware` -> `proxy` migration if relevant
+3. `next lint` migration path to ESLint CLI (if codemod applies)
+4. Node runtime requirement check
+
+### Steps
+1. Branch `chore/next16-evaluation`
+2. Run codemod dry-run first
+3. Apply upgrade + re-run all test gates
+4. Compare build performance and runtime behavior
+
+### Exit Rule
+If any non-trivial regression appears, stay on Next 15 and postpone Next 16.
+
+---
+
+## Vulnerability Handling Policy
+Current audit indicates unresolved issues needing major upgrades (`--force` path).
+
+Policy:
+1. Do **not** run `npm audit fix --force` directly on main.
+2. Use phased upgrades above.
+3. Re-run `npm audit` after each phase and document diff.
+
+---
+
+## Execution Checklist Template (copy for each phase)
+- [ ] Create branch
+- [ ] Record baseline (`npm audit`, `npm run build`, `npm run lint`)
+- [ ] Apply dependency/codemod changes for this phase only
+- [ ] Run test gates
+- [ ] Run manual smoke checklist
+- [ ] Open PR with:
+  - risk summary
+  - changed packages
+  - migration notes
+  - rollback steps
+- [ ] Deploy preview, validate
+- [ ] Merge and monitor production
+
+---
+
+## Suggested Timeline
+- **Week 1:** Phase A (Next 14 patched) + production validation
+- **Week 2:** Phase B prep and codemod dry-runs
+- **Week 3:** Phase B implementation + staged rollout
+- **Later:** Phase C evaluation (optional)
+
+---
+
+## Final Recommendation
+Start with **Phase A immediately** to reduce risk quickly with minimal breakage chance, then schedule **Phase B** in a controlled window with full test gates and rollback plan.

@@ -13,6 +13,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  getAdminSessionCookieName,
+  getAdminSessionToken,
+  getAdminSessionTtlSeconds,
+} from '@/lib/admin-session';
 
 // Leer credenciales desde variables de entorno (no visibles en el código)
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'BPS';
@@ -65,7 +70,15 @@ export async function POST(request: NextRequest) {
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       // Login exitoso: limpiar el registro de intentos fallidos
       delete registroIntentos[ip];
-      return NextResponse.json({ authenticated: true });
+      const response = NextResponse.json({ authenticated: true });
+      response.cookies.set(getAdminSessionCookieName(), getAdminSessionToken(), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: getAdminSessionTtlSeconds(),
+        path: '/',
+      });
+      return response;
     } else {
       // Login fallido: incrementar el contador de intentos
       if (!registroIntentos[ip]) {

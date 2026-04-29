@@ -14,7 +14,15 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function Navbar() {
+export type NavbarProps = {
+  enrollmentEnabled?: boolean;
+  officialExamEnabled?: boolean;
+};
+
+export default function Navbar({
+  enrollmentEnabled = true,
+  officialExamEnabled = true,
+}: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Detectar si el usuario hizo scroll (para cambiar el fondo del navbar)
   const [scrolled, setScrolled] = useState(false);
@@ -31,7 +39,7 @@ export default function Navbar() {
     { href: '/', label: 'Inicio' },
     { href: '/somos', label: 'Somos' },
     { href: '/practica', label: 'Práctica' },
-    { href: '/examen', label: 'Examen Oficial' },
+    ...(officialExamEnabled ? [{ href: '/examen', label: 'Examen Oficial' }] : []),
   ];
 
   return (
@@ -68,13 +76,15 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/matricula"
-              className="ml-2 bg-maritime-gold text-navy px-5 py-2.5 rounded-xl font-bold text-sm
-                         hover:bg-yellow-400 transition-all duration-300 shadow-md hover:shadow-lg"
-            >
-              Inscríbete
-            </Link>
+            {enrollmentEnabled && (
+              <Link
+                href="/matricula"
+                className="ml-2 bg-maritime-gold text-navy px-5 py-2.5 rounded-xl font-bold text-sm
+                           hover:bg-yellow-400 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                Inscríbete
+              </Link>
+            )}
           </div>
 
           {/* Botón hamburguesa (móviles) */}
@@ -109,14 +119,16 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                <Link
-                  href="/matricula"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="mt-2 bg-maritime-gold text-navy px-4 py-3 rounded-xl font-bold
-                             text-center hover:bg-yellow-400 transition-all duration-300"
-                >
-                  Inscríbete Ahora
-                </Link>
+                {enrollmentEnabled && (
+                  <Link
+                    href="/matricula"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="mt-2 bg-maritime-gold text-navy px-4 py-3 rounded-xl font-bold
+                               text-center hover:bg-yellow-400 transition-all duration-300"
+                  >
+                    Inscríbete Ahora
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}

@@ -9,8 +9,31 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Anchor, Mail, Waves } from 'lucide-react';
 
-export default function Footer() {
+export type FooterProps = {
+  enrollmentEnabled?: boolean;
+  officialExamEnabled?: boolean;
+};
+
+export default function Footer({
+  enrollmentEnabled = true,
+  officialExamEnabled = true,
+}: FooterProps) {
   const currentYear = new Date().getFullYear();
+
+  const navLinksAll = [
+    { href: '/', label: 'Inicio' },
+    { href: '/somos', label: 'Somos' },
+    { href: '/matricula', label: 'Inscríbete' },
+    { href: '/practica', label: 'Práctica' },
+    { href: '/examen', label: 'Examen Oficial' },
+    { href: '/admin', label: 'Panel Administrativo' },
+  ];
+
+  const navLinks = navLinksAll.filter((link) => {
+    if (link.href === '/matricula') return enrollmentEnabled;
+    if (link.href === '/examen') return officialExamEnabled;
+    return true;
+  });
 
   return (
     <footer className="relative">
@@ -53,14 +76,7 @@ export default function Footer() {
             <div>
               <h3 className="font-bold text-lg mb-5 text-white">Navegación</h3>
               <ul className="space-y-3">
-                {[
-                  { href: '/', label: 'Inicio' },
-                  { href: '/somos', label: 'Somos' },
-                  { href: '/matricula', label: 'Inscríbete' },
-                  { href: '/practica', label: 'Práctica' },
-                  { href: '/examen', label: 'Examen Oficial' },
-                  { href: '/admin', label: 'Panel Administrativo' },
-                ].map((link) => (
+                {navLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}

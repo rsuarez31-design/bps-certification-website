@@ -13,14 +13,14 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import {
   Lock, Users, AlertTriangle,
   Eye, ClipboardList,
   LogOut, Settings, X, Download, Save,
   Package, FileText,
-  BookOpen, Image as ImageIcon, Upload, Trash2, Loader2
+  BookOpen, Image as ImageIcon, Upload, Trash2, Loader2, UserPlus, Pencil
 } from 'lucide-react';
 
 // --- Tipos de datos ---
@@ -83,6 +83,41 @@ interface FailedQuestion {
   fail_count: number;
 }
 
+type RegistrationEditableFields = Pick<
+  Registration,
+  | 'course_name'
+  | 'course_date'
+  | 'full_name'
+  | 'last_name'
+  | 'postal_address'
+  | 'physical_address'
+  | 'city'
+  | 'country'
+  | 'zip_code'
+  | 'phone'
+  | 'cellphone'
+  | 'email'
+  | 'gender'
+  | 'birth_date'
+  | 'is_minor'
+  | 'parent_guardian_signature'
+  | 'parent_guardian_signed_at'
+  | 'hair_color'
+  | 'eye_color'
+  | 'height_feet'
+  | 'height_inches'
+  | 'boat_type'
+  | 'boat_length'
+  | 'has_trailer'
+  | 'years_experience'
+  | 'motor_power'
+>;
+
+interface ManualRegistrationDraft extends RegistrationEditableFields {
+  wants_book_shipping: boolean;
+  tracking_number: string;
+}
+
 // Pregunta completa del banco (como la devuelve /api/admin/questions).
 interface BankQuestion {
   id: number;
@@ -106,6 +141,86 @@ const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
+
+const EMPTY_MANUAL_REGISTRATION: ManualRegistrationDraft = {
+  course_name: '',
+  course_date: '',
+  full_name: '',
+  last_name: '',
+  postal_address: '',
+  physical_address: '',
+  city: '',
+  country: 'Puerto Rico',
+  zip_code: '',
+  phone: '',
+  cellphone: '',
+  email: '',
+  gender: '',
+  birth_date: '',
+  is_minor: false,
+  parent_guardian_signature: '',
+  parent_guardian_signed_at: '',
+  hair_color: '',
+  eye_color: '',
+  height_feet: '',
+  height_inches: '',
+  boat_type: '',
+  boat_length: '',
+  has_trailer: '',
+  years_experience: '',
+  motor_power: '',
+  wants_book_shipping: false,
+  tracking_number: '',
+};
+
+const BOAT_TYPE_OPTIONS = [
+  { value: '', label: 'Selecciona...' },
+  { value: 'Ninguno', label: 'Ninguno' },
+  { value: 'Outboard', label: 'Fuera de Borda (Outboard)' },
+  { value: 'IO', label: 'I/O' },
+  { value: 'Inboard', label: 'Intraborda (Inboard)' },
+  { value: 'Sail', label: 'Vela (Sail)' },
+  { value: 'PWC', label: 'PWC (Moto acuática)' },
+  { value: 'Paddle', label: 'Remo/Paleta (Paddle)' },
+];
+
+const BOAT_LENGTH_OPTIONS = [
+  { value: '', label: 'Selecciona...' },
+  { value: "Menos de 16'", label: '< 16 pies' },
+  { value: "16-25'", label: '16-25 pies' },
+  { value: "26-39'", label: '26-39 pies' },
+  { value: "40-54'", label: '40-54 pies' },
+  { value: "55'+", label: '55+ pies' },
+];
+
+/** Verifica si el borrador de edición coincide con la matrícula guardada */
+function registrationDraftMatchesSaved(draft: RegistrationEditableFields, reg: Registration): boolean {
+  const keys: (keyof RegistrationEditableFields)[] = [
+    'course_name', 'course_date', 'full_name', 'last_name', 'postal_address', 'physical_address',
+    'city', 'country', 'zip_code', 'phone', 'cellphone', 'email', 'gender', 'birth_date', 'is_minor',
+    'parent_guardian_signature', 'parent_guardian_signed_at', 'hair_color', 'eye_color',
+    'height_feet', 'height_inches', 'boat_type', 'boat_length', 'has_trailer', 'years_experience', 'motor_power',
+  ];
+  return keys.every((k) => {
+    const d = draft[k];
+    const r = reg[k as keyof Registration];
+    if (typeof d === 'boolean' || typeof r === 'boolean') return !!d === !!r;
+    return String(d ?? '').trim() === String(r ?? '').trim();
+  });
+}
+
+type SavedConfigSnapshot = {
+  course_month: string;
+  course_year: string;
+  official_exam_enabled: boolean;
+  enrollment_enabled: boolean;
+};
+
+type UnsavedPromptIntent =
+  | { kind: 'tab'; tab: 'registrations' | 'exams' | 'questions' | 'bank' | 'config' }
+  | { kind: 'logout' }
+  | { kind: 'close-reg-modal' }
+  | { kind: 'close-manual-modal' };
 
 export default function AdminPage() {
   // Login
@@ -137,6 +252,16 @@ export default function AdminPage() {
 
   // Modal de detalle de matrícula
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
+  const [isEditingRegistration, setIsEditingRegistration] = useState(false);
+  const [registrationDraft, setRegistrationDraft] = useState<RegistrationEditableFields | null>(null);
+  const [savingRegistration, setSavingRegistration] = useState(false);
+  const [uploadingRegistrationId, setUploadingRegistrationId] = useState(false);
+
+  // Matrícula manual (pago en persona)
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualDraft, setManualDraft] = useState<ManualRegistrationDraft>(EMPTY_MANUAL_REGISTRATION);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualIdFile, setManualIdFile] = useState<File | null>(null);
 
   // Tracking number en edición
   const [editingTracking, setEditingTracking] = useState('');
@@ -145,8 +270,54 @@ export default function AdminPage() {
   // Configuración del curso
   const [configMonth, setConfigMonth] = useState('Enero');
   const [configYear, setConfigYear] = useState('2026');
+  /** Visibilidad pública de /examen y /matricula */
+  const [officialExamEnabled, setOfficialExamEnabled] = useState(true);
+  const [enrollmentEnabled, setEnrollmentEnabled] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
+  /** Valores últimos conocidos del servidor (para detectar cambios sin guardar en Configuración) */
+  const [savedConfigSnapshot, setSavedConfigSnapshot] = useState<SavedConfigSnapshot>({
+    course_month: 'Enero',
+    course_year: '2026',
+    official_exam_enabled: true,
+    enrollment_enabled: true,
+  });
+  /** Diálogo: salir sin guardar / guardar (pestañas Matrículas y Configuración, logout, cerrar modales) */
+  const [unsavedPrompt, setUnsavedPrompt] = useState<UnsavedPromptIntent | null>(null);
+
+  const configDirty = useMemo(
+    () =>
+      configMonth !== savedConfigSnapshot.course_month ||
+      String(configYear) !== String(savedConfigSnapshot.course_year) ||
+      officialExamEnabled !== savedConfigSnapshot.official_exam_enabled ||
+      enrollmentEnabled !== savedConfigSnapshot.enrollment_enabled,
+    [configMonth, configYear, officialExamEnabled, enrollmentEnabled, savedConfigSnapshot],
+  );
+
+  const isManualDraftDirty = () =>
+    JSON.stringify(manualDraft) !== JSON.stringify(EMPTY_MANUAL_REGISTRATION) || manualIdFile !== null;
+
+  const registrationsWorkDirty = useMemo(() => {
+    if (manualModalOpen && isManualDraftDirty()) return true;
+    if (!selectedRegistration) return false;
+    const trackingDirty =
+      (editingTracking || '').trim() !== (selectedRegistration.tracking_number || '').trim();
+    if (trackingDirty) return true;
+    if (isEditingRegistration && registrationDraft && !registrationDraftMatchesSaved(registrationDraft, selectedRegistration)) {
+      return true;
+    }
+    return false;
+  }, [
+    manualModalOpen,
+    manualDraft,
+    manualIdFile,
+    selectedRegistration,
+    editingTracking,
+    isEditingRegistration,
+    registrationDraft,
+  ]);
+
+  const hasAnyUnsavedWork = configDirty || registrationsWorkDirty;
 
   // --- Cache por pestaña (lazy load + TTL / stale-while-revalidate) ---
   //
@@ -366,54 +537,326 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/config');
       const data = await res.json();
       if (data.course_month) setConfigMonth(data.course_month);
-      if (data.course_year) setConfigYear(data.course_year);
+      if (data.course_year) setConfigYear(String(data.course_year));
+      if (typeof data.official_exam_enabled === 'boolean') {
+        setOfficialExamEnabled(data.official_exam_enabled);
+      }
+      if (typeof data.enrollment_enabled === 'boolean') {
+        setEnrollmentEnabled(data.enrollment_enabled);
+      }
+      setSavedConfigSnapshot({
+        course_month: data.course_month || 'Enero',
+        course_year: String(data.course_year ?? '2026'),
+        official_exam_enabled: data.official_exam_enabled !== false,
+        enrollment_enabled: data.enrollment_enabled !== false,
+      });
       markFresh('config');
     } catch (err) {
       console.warn('No se pudo cargar la configuración:', err);
     }
   };
 
-  // --- Guardar configuración ---
-  const saveConfig = async () => {
+  /** Persiste configuración y actualiza snapshot; devuelve si se guardó bien */
+  const persistConfigToServer = async (): Promise<boolean> => {
     setSavingConfig(true);
     setConfigMessage('');
     try {
       const res = await fetch('/api/admin/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ course_month: configMonth, course_year: configYear }),
+        body: JSON.stringify({
+          course_month: configMonth,
+          course_year: configYear,
+          official_exam_enabled: officialExamEnabled,
+          enrollment_enabled: enrollmentEnabled,
+        }),
       });
       const data = await res.json();
       if (data.success) {
+        setSavedConfigSnapshot({
+          course_month: configMonth,
+          course_year: String(configYear),
+          official_exam_enabled: officialExamEnabled,
+          enrollment_enabled: enrollmentEnabled,
+        });
         setConfigMessage('Configuración guardada exitosamente.');
-      } else {
-        setConfigMessage('Error al guardar: ' + (data.error || ''));
+        return true;
       }
+      setConfigMessage('Error al guardar: ' + (data.error || ''));
+      return false;
     } catch {
       setConfigMessage('Error de conexión al guardar.');
+      return false;
     } finally {
       setSavingConfig(false);
     }
   };
 
+  const saveConfig = async () => {
+    await persistConfigToServer();
+  };
+
   // --- Guardar tracking number ---
-  const saveTracking = async (regId: string) => {
+  const saveTracking = async (regId: string): Promise<boolean> => {
     setSavingTracking(true);
     try {
-      await fetch('/api/admin/tracking', {
+      const res = await fetch('/api/admin/tracking', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ registrationId: regId, trackingNumber: editingTracking }),
       });
-      // Actualizar en la lista local
+      if (!res.ok) {
+        alert('No se pudo guardar el número de rastreo.');
+        return false;
+      }
       setRegistrations(prev => prev.map(r => r.id === regId ? { ...r, tracking_number: editingTracking } : r));
       if (selectedRegistration?.id === regId) {
         setSelectedRegistration(prev => prev ? { ...prev, tracking_number: editingTracking } : null);
       }
+      return true;
     } catch (err) {
       console.error('Error al guardar tracking:', err);
+      return false;
     } finally {
       setSavingTracking(false);
+    }
+  };
+
+  const openRegistrationDetails = (registration: Registration) => {
+    setSelectedRegistration(registration);
+    setEditingTracking(registration.tracking_number || '');
+    setIsEditingRegistration(false);
+    setRegistrationDraft({
+      course_name: registration.course_name || '',
+      course_date: registration.course_date || '',
+      full_name: registration.full_name || '',
+      last_name: registration.last_name || '',
+      postal_address: registration.postal_address || '',
+      physical_address: registration.physical_address || '',
+      city: registration.city || '',
+      country: registration.country || '',
+      zip_code: registration.zip_code || '',
+      phone: registration.phone || '',
+      cellphone: registration.cellphone || '',
+      email: registration.email || '',
+      gender: registration.gender || '',
+      birth_date: registration.birth_date || '',
+      is_minor: registration.is_minor || false,
+      parent_guardian_signature: registration.parent_guardian_signature || '',
+      parent_guardian_signed_at: registration.parent_guardian_signed_at || '',
+      hair_color: registration.hair_color || '',
+      eye_color: registration.eye_color || '',
+      height_feet: registration.height_feet || '',
+      height_inches: registration.height_inches || '',
+      boat_type: registration.boat_type || '',
+      boat_length: registration.boat_length || '',
+      has_trailer: registration.has_trailer || '',
+      years_experience: registration.years_experience || '',
+      motor_power: registration.motor_power || '',
+    });
+  };
+
+  const validateRegistrationDraft = (draft: RegistrationEditableFields): string[] => {
+    const newErrors: string[] = [];
+    if (!draft.full_name.trim()) newErrors.push('Nombre es obligatorio');
+    if (!draft.last_name.trim()) newErrors.push('Apellido es obligatorio');
+    if (!draft.email.trim()) newErrors.push('Correo electrónico es obligatorio');
+    if (!draft.phone.trim()) newErrors.push('Teléfono es obligatorio');
+    if (!draft.birth_date) newErrors.push('Fecha de nacimiento es obligatoria');
+    if (!draft.gender) newErrors.push('Sexo es obligatorio');
+
+    if (draft.is_minor && !draft.parent_guardian_signature.trim()) {
+      newErrors.push('Firma de padre/madre/guardián es obligatoria para menores');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (draft.email && !emailRegex.test(draft.email)) {
+      newErrors.push('El correo electrónico no tiene un formato válido');
+    }
+
+    const phoneDigits = draft.phone.replace(/\D/g, '');
+    if (draft.phone && phoneDigits.length < 7) {
+      newErrors.push('El teléfono debe tener al menos 7 dígitos');
+    }
+
+    if (draft.birth_date) {
+      const birthYear = new Date(draft.birth_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      if (birthYear < 1920 || birthYear > currentYear) {
+        newErrors.push('La fecha de nacimiento no parece correcta');
+      }
+    }
+
+    return newErrors;
+  };
+
+  const saveRegistrationEdits = async (): Promise<boolean> => {
+    if (!selectedRegistration || !registrationDraft) return false;
+    const errors = validateRegistrationDraft(registrationDraft);
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+      return false;
+    }
+    setSavingRegistration(true);
+    try {
+      const res = await fetch(`/api/admin/registrations/${selectedRegistration.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(registrationDraft),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success || !data?.registration) {
+        alert(data?.error || 'No se pudo guardar la matrícula.');
+        return false;
+      }
+      const updated = data.registration as Registration;
+      setSelectedRegistration(updated);
+      setRegistrations(prev => prev.map(r => r.id === updated.id ? updated : r));
+      setEditingTracking(updated.tracking_number || '');
+      setIsEditingRegistration(false);
+      setRegistrationDraft({
+        course_name: updated.course_name || '',
+        course_date: updated.course_date || '',
+        full_name: updated.full_name || '',
+        last_name: updated.last_name || '',
+        postal_address: updated.postal_address || '',
+        physical_address: updated.physical_address || '',
+        city: updated.city || '',
+        country: updated.country || '',
+        zip_code: updated.zip_code || '',
+        phone: updated.phone || '',
+        cellphone: updated.cellphone || '',
+        email: updated.email || '',
+        gender: updated.gender || '',
+        birth_date: updated.birth_date || '',
+        is_minor: updated.is_minor || false,
+        parent_guardian_signature: updated.parent_guardian_signature || '',
+        parent_guardian_signed_at: updated.parent_guardian_signed_at || '',
+        hair_color: updated.hair_color || '',
+        eye_color: updated.eye_color || '',
+        height_feet: updated.height_feet || '',
+        height_inches: updated.height_inches || '',
+        boat_type: updated.boat_type || '',
+        boat_length: updated.boat_length || '',
+        has_trailer: updated.has_trailer || '',
+        years_experience: updated.years_experience || '',
+        motor_power: updated.motor_power || '',
+      });
+      return true;
+    } catch (error) {
+      console.error('Error al actualizar matrícula:', error);
+      alert('Error de conexión al guardar la matrícula.');
+      return false;
+    } finally {
+      setSavingRegistration(false);
+    }
+  };
+
+  const uploadRegistrationIdDocument = async (registrationId: string, file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    const maxBytes = 5 * 1024 * 1024;
+    if (!allowedTypes.includes(file.type)) {
+      alert('Formato no válido. Solo se aceptan: JPG, PNG o PDF.');
+      return false;
+    }
+    if (file.size > maxBytes) {
+      alert('El archivo excede 5 MB.');
+      return false;
+    }
+
+    setUploadingRegistrationId(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`/api/admin/registrations/${registrationId}/id-document`, {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        alert(data?.error || 'No se pudo subir el documento.');
+        return false;
+      }
+      setSelectedRegistration(prev => prev ? {
+        ...prev,
+        id_document_path: data.id_document_path || prev.id_document_path,
+        id_document_url: data.id_document_url || prev.id_document_url,
+      } : null);
+      setRegistrations(prev => prev.map(r => r.id === registrationId ? {
+        ...r,
+        id_document_path: data.id_document_path || r.id_document_path,
+        id_document_url: data.id_document_url || r.id_document_url,
+      } : r));
+      return true;
+    } catch (error) {
+      console.error('Error al subir documento:', error);
+      alert('Error de conexión al subir el documento.');
+      return false;
+    } finally {
+      setUploadingRegistrationId(false);
+    }
+  };
+
+  const createManualRegistration = async (opts?: { quietSuccess?: boolean }): Promise<boolean> => {
+    const draftForValidation: RegistrationEditableFields = {
+      ...manualDraft,
+      is_minor: manualDraft.is_minor,
+    };
+    const errors = validateRegistrationDraft(draftForValidation);
+    if (errors.length > 0) {
+      alert(errors.join('\n'));
+      return false;
+    }
+
+    if (manualIdFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      const maxBytes = 5 * 1024 * 1024;
+      if (!allowedTypes.includes(manualIdFile.type)) {
+        alert('Formato de ID no válido. Solo JPG, PNG o PDF.');
+        return false;
+      }
+      if (manualIdFile.size > maxBytes) {
+        alert('El archivo de ID excede 5 MB.');
+        return false;
+      }
+    }
+
+    setManualSaving(true);
+    try {
+      const payload = {
+        ...manualDraft,
+        payment_status: 'paid',
+        enrollment_source: 'manual_in_person',
+      };
+      const res = await fetch('/api/admin/registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success || !data?.registration) {
+        alert(data?.error || 'No se pudo crear la matrícula manual.');
+        return false;
+      }
+
+      const created = data.registration as Registration;
+      if (manualIdFile) {
+        await uploadRegistrationIdDocument(created.id, manualIdFile);
+      }
+      await loadRegistrations();
+      setManualModalOpen(false);
+      setManualDraft(EMPTY_MANUAL_REGISTRATION);
+      setManualIdFile(null);
+      if (!opts?.quietSuccess) {
+        alert('Matrícula registrada como pagada en persona.');
+      }
+      return true;
+    } catch (error) {
+      console.error('Error al crear matrícula manual:', error);
+      alert('Error de conexión al crear matrícula manual.');
+      return false;
+    } finally {
+      setManualSaving(false);
     }
   };
 
@@ -494,12 +937,188 @@ export default function AdminPage() {
     }
   };
 
-  // --- Logout ---
-  const handleLogout = () => {
+  // --- Logout y navegación con cambios sin guardar (Matrículas + Configuración) ---
+  const performLogout = () => {
     setIsAuthenticated(false);
     setUsername('');
     setPassword('');
+    setUnsavedPrompt(null);
   };
+
+  const applyPromptCompletion = (intent: UnsavedPromptIntent) => {
+    if (intent.kind === 'tab') setActiveTab(intent.tab);
+    else if (intent.kind === 'logout') performLogout();
+  };
+
+  const requestTabChange = (tab: 'registrations' | 'exams' | 'questions' | 'bank' | 'config') => {
+    if (tab === activeTab) return;
+    const leaveConfig = activeTab === 'config' && configDirty;
+    const leaveRegs = activeTab === 'registrations' && registrationsWorkDirty;
+    if (leaveConfig || leaveRegs) {
+      setUnsavedPrompt({ kind: 'tab', tab });
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const requestLogout = () => {
+    if (hasAnyUnsavedWork) {
+      setUnsavedPrompt({ kind: 'logout' });
+      return;
+    }
+    performLogout();
+  };
+
+  const registrationModalHasUnsaved = (): boolean => {
+    if (!selectedRegistration) return false;
+    const trackingDirty =
+      (editingTracking || '').trim() !== (selectedRegistration.tracking_number || '').trim();
+    if (trackingDirty) return true;
+    return !!(isEditingRegistration && registrationDraft &&
+      !registrationDraftMatchesSaved(registrationDraft, selectedRegistration));
+  };
+
+  const requestCloseRegistrationModal = () => {
+    if (registrationModalHasUnsaved()) {
+      setUnsavedPrompt({ kind: 'close-reg-modal' });
+      return;
+    }
+    setSelectedRegistration(null);
+    setIsEditingRegistration(false);
+    setRegistrationDraft(null);
+    setEditingTracking('');
+  };
+
+  const requestCloseManualModal = () => {
+    if (isManualDraftDirty()) {
+      setUnsavedPrompt({ kind: 'close-manual-modal' });
+      return;
+    }
+    setManualModalOpen(false);
+  };
+
+  const handleDiscardUnsaved = () => {
+    const intent = unsavedPrompt;
+    if (!intent) return;
+
+    if (intent.kind === 'close-manual-modal') {
+      setManualModalOpen(false);
+      setManualDraft(EMPTY_MANUAL_REGISTRATION);
+      setManualIdFile(null);
+      setUnsavedPrompt(null);
+      return;
+    }
+
+    if (intent.kind === 'close-reg-modal') {
+      setSelectedRegistration(null);
+      setIsEditingRegistration(false);
+      setRegistrationDraft(null);
+      setEditingTracking('');
+      setUnsavedPrompt(null);
+      return;
+    }
+
+    if (configDirty) {
+      setConfigMonth(savedConfigSnapshot.course_month);
+      setConfigYear(savedConfigSnapshot.course_year);
+      setOfficialExamEnabled(savedConfigSnapshot.official_exam_enabled);
+      setEnrollmentEnabled(savedConfigSnapshot.enrollment_enabled);
+    }
+    setManualModalOpen(false);
+    setManualDraft(EMPTY_MANUAL_REGISTRATION);
+    setManualIdFile(null);
+    setSelectedRegistration(null);
+    setIsEditingRegistration(false);
+    setRegistrationDraft(null);
+    setEditingTracking('');
+    setUnsavedPrompt(null);
+    applyPromptCompletion(intent);
+  };
+
+  const handleSaveUnsavedAndProceed = async () => {
+    const intent = unsavedPrompt;
+    if (!intent) return;
+
+    if (intent.kind === 'close-manual-modal') {
+      const ok = await createManualRegistration({ quietSuccess: true });
+      if (!ok) return;
+      setManualModalOpen(false);
+      setManualDraft(EMPTY_MANUAL_REGISTRATION);
+      setManualIdFile(null);
+      setUnsavedPrompt(null);
+      return;
+    }
+
+    if (intent.kind === 'close-reg-modal') {
+      const idSnap = selectedRegistration?.id;
+      const hadTrackingDiff =
+        !!idSnap &&
+        (editingTracking || '').trim() !== (selectedRegistration?.tracking_number || '').trim();
+
+      if (selectedRegistration && isEditingRegistration && registrationDraft &&
+          !registrationDraftMatchesSaved(registrationDraft, selectedRegistration)) {
+        const ok = await saveRegistrationEdits();
+        if (!ok) return;
+      }
+      if (hadTrackingDiff && idSnap) {
+        const ok = await saveTracking(idSnap);
+        if (!ok) return;
+      }
+      setSelectedRegistration(null);
+      setIsEditingRegistration(false);
+      setRegistrationDraft(null);
+      setEditingTracking('');
+      setUnsavedPrompt(null);
+      return;
+    }
+
+    const idSnap = selectedRegistration?.id;
+    const hadTrackingDiff =
+      !!idSnap &&
+      (editingTracking || '').trim() !== (selectedRegistration?.tracking_number || '').trim();
+
+    if (configDirty) {
+      const ok = await persistConfigToServer();
+      if (!ok) return;
+    }
+
+    if (manualModalOpen && isManualDraftDirty()) {
+      const ok = await createManualRegistration({ quietSuccess: true });
+      if (!ok) return;
+    }
+
+    if (selectedRegistration && isEditingRegistration && registrationDraft &&
+        !registrationDraftMatchesSaved(registrationDraft, selectedRegistration)) {
+      const ok = await saveRegistrationEdits();
+      if (!ok) return;
+    }
+
+    if (hadTrackingDiff && idSnap) {
+      const ok = await saveTracking(idSnap);
+      if (!ok) return;
+    }
+
+    setUnsavedPrompt(null);
+    applyPromptCompletion(intent);
+  };
+
+  const handleCancelUnsavedPrompt = () => {
+    setUnsavedPrompt(null);
+  };
+
+  const unsavedPromptSaving =
+    savingConfig || savingRegistration || manualSaving || savingTracking;
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasAnyUnsavedWork) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isAuthenticated, hasAnyUnsavedWork]);
 
   // ===== PANTALLA DE LOGIN =====
   if (!isAuthenticated) {
@@ -553,7 +1172,7 @@ export default function AdminPage() {
             >
               {(isLoading || bankLoading) ? 'Cargando...' : 'Actualizar Datos'}
             </button>
-            <button onClick={handleLogout} className="btn-secondary text-sm flex items-center gap-2">
+            <button onClick={requestLogout} className="btn-secondary text-sm flex items-center gap-2">
               <LogOut className="w-4 h-4" /> Cerrar Sesión
             </button>
           </div>
@@ -570,7 +1189,7 @@ export default function AdminPage() {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => requestTabChange(tab.id)}
               className={`px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors ${
                 activeTab === tab.id ? 'bg-navy text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
@@ -584,11 +1203,19 @@ export default function AdminPage() {
         {/* ===== MATRÍCULAS ===== */}
         {activeTab === 'registrations' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-navy">Matrículas pagadas</h2>
-              <p className="text-gray-600 text-sm mt-1">
-                Solo aparecen inscripciones con pago confirmado. Los intentos de pago cancelados no se guardan en la base de datos.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-navy">Matrículas pagadas</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Solo aparecen inscripciones con pago confirmado. Los intentos de pago cancelados no se guardan en la base de datos.
+                </p>
+              </div>
+              <button
+                onClick={() => setManualModalOpen(true)}
+                className="btn-primary text-sm inline-flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" /> Nueva matrícula (pago en persona)
+              </button>
             </div>
 
             {registrationsError && (
@@ -699,10 +1326,7 @@ export default function AdminPage() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={() => {
-                              setSelectedRegistration(reg);
-                              setEditingTracking(reg.tracking_number || '');
-                            }}
+                            onClick={() => openRegistrationDetails(reg)}
                             className="px-3 py-1 bg-navy/10 text-navy rounded-lg text-sm font-semibold hover:bg-navy/20 transition-colors inline-flex items-center gap-1"
                           >
                             <Eye className="w-4 h-4" /> Ver Detalles
@@ -720,81 +1344,264 @@ export default function AdminPage() {
         {/* ===== MODAL DE DETALLES ===== */}
         {selectedRegistration && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-20 pb-10 px-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 relative">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-6 relative">
               <button
-                onClick={() => setSelectedRegistration(null)}
+                type="button"
+                onClick={requestCloseRegistrationModal}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
               >
                 <X className="w-6 h-6" />
               </button>
 
-              <h2 className="text-2xl font-bold text-navy mb-6">Detalles de Matrícula</h2>
+              <div className="flex items-center justify-between mb-6 pr-10">
+                <h2 className="text-2xl font-bold text-navy">Detalles de Matrícula</h2>
+                {!isEditingRegistration ? (
+                  <button
+                    onClick={() => setIsEditingRegistration(true)}
+                    className="btn-secondary text-sm inline-flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4" /> Editar información
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!selectedRegistration) return;
+                        openRegistrationDetails(selectedRegistration);
+                        setIsEditingRegistration(false);
+                      }}
+                      className="btn-secondary text-sm"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={saveRegistrationEdits}
+                      disabled={savingRegistration}
+                      className="btn-primary text-sm disabled:opacity-50"
+                    >
+                      {savingRegistration ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                {/* Información del Curso */}
                 <div className="md:col-span-2 bg-navy/5 rounded-lg p-4 mb-2">
                   <h3 className="font-bold text-navy mb-2">Información del Curso</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><span className="text-gray-500">Título:</span> <span className="font-semibold">{selectedRegistration.course_name || '—'}</span></div>
-                    <div><span className="text-gray-500">Fecha Matrícula:</span> <span className="font-semibold">{selectedRegistration.course_date || '—'}</span></div>
+                    <div>
+                      <span className="text-gray-500">Título:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input
+                          type="text"
+                          value={registrationDraft?.course_name || ''}
+                          onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, course_name: e.target.value } : null)}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      ) : <span className="font-semibold">{selectedRegistration.course_name || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Fecha Matrícula:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input
+                          type="date"
+                          value={registrationDraft?.course_date || ''}
+                          onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, course_date: e.target.value } : null)}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      ) : <span className="font-semibold">{selectedRegistration.course_date || '—'}</span>}
+                    </div>
                   </div>
                 </div>
 
-                {/* Datos Personales */}
                 <div className="md:col-span-2 bg-navy/5 rounded-lg p-4 mb-2">
                   <h3 className="font-bold text-navy mb-2">Datos Personales</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><span className="text-gray-500">Nombre:</span> <span className="font-semibold">{selectedRegistration.full_name}</span></div>
-                    <div><span className="text-gray-500">Apellido:</span> <span className="font-semibold">{selectedRegistration.last_name || '—'}</span></div>
-                    <div><span className="text-gray-500">Dir. Postal:</span> <span className="font-semibold">{selectedRegistration.postal_address || '—'}</span></div>
-                    <div><span className="text-gray-500">Dir. Física:</span> <span className="font-semibold">{selectedRegistration.physical_address || '—'}</span></div>
-                    <div><span className="text-gray-500">Ciudad:</span> <span className="font-semibold">{selectedRegistration.city || '—'}</span></div>
-                    <div><span className="text-gray-500">País:</span> <span className="font-semibold">{selectedRegistration.country || '—'}</span></div>
-                    <div><span className="text-gray-500">Código Postal:</span> <span className="font-semibold">{selectedRegistration.zip_code || '—'}</span></div>
-                    <div><span className="text-gray-500">Teléfono:</span> <span className="font-semibold">{selectedRegistration.phone || '—'}</span></div>
-                    <div><span className="text-gray-500">Celular:</span> <span className="font-semibold">{selectedRegistration.cellphone || '—'}</span></div>
-                    <div><span className="text-gray-500">Email:</span> <span className="font-semibold">{selectedRegistration.email}</span></div>
-                    <div><span className="text-gray-500">Sexo:</span> <span className="font-semibold">{selectedRegistration.gender || '—'}</span></div>
-                    <div><span className="text-gray-500">Fecha Nacimiento:</span> <span className="font-semibold">{selectedRegistration.birth_date || '—'}</span></div>
-                    <div><span className="text-gray-500">¿Menor?:</span> <span className="font-semibold">{selectedRegistration.is_minor ? 'Sí' : 'No'}</span></div>
-                    {selectedRegistration.is_minor && (
+                    <div>
+                      <span className="text-gray-500">Nombre:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.full_name || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, full_name: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.full_name}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Apellido:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.last_name || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, last_name: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.last_name || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Dir. Postal:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.postal_address || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, postal_address: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.postal_address || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Dir. Física:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.physical_address || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, physical_address: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.physical_address || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Ciudad:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.city || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, city: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.city || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">País:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.country || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, country: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.country || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Código Postal:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.zip_code || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, zip_code: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.zip_code || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Teléfono:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="tel" value={registrationDraft?.phone || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, phone: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.phone || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Celular:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="tel" value={registrationDraft?.cellphone || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, cellphone: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.cellphone || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Email:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="email" value={registrationDraft?.email || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, email: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.email}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Sexo:</span>{' '}
+                      {isEditingRegistration ? (
+                        <select value={registrationDraft?.gender || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, gender: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
+                          <option value="">Selecciona...</option>
+                          <option value="M">Masculino (M)</option>
+                          <option value="F">Femenino (F)</option>
+                        </select>
+                      ) : <span className="font-semibold">{selectedRegistration.gender || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Fecha Nacimiento:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="date" value={registrationDraft?.birth_date || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, birth_date: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.birth_date || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">¿Menor?:</span>{' '}
+                      {isEditingRegistration ? (
+                        <select
+                          value={registrationDraft?.is_minor ? 'si' : 'no'}
+                          onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, is_minor: e.target.value === 'si' } : null)}
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        >
+                          <option value="no">No</option>
+                          <option value="si">Sí</option>
+                        </select>
+                      ) : <span className="font-semibold">{selectedRegistration.is_minor ? 'Sí' : 'No'}</span>}
+                    </div>
+                    {(registrationDraft?.is_minor || selectedRegistration.is_minor) && (
                       <>
-                        <div><span className="text-gray-500">Firma Padre/Tutor:</span> <span className="font-semibold">{selectedRegistration.parent_guardian_signature || '—'}</span></div>
-                        <div><span className="text-gray-500">Fecha Firma:</span> <span className="font-semibold">{selectedRegistration.parent_guardian_signed_at || '—'}</span></div>
+                        <div>
+                          <span className="text-gray-500">Firma Padre/Tutor:</span>{' '}
+                          {isEditingRegistration ? (
+                            <input type="text" value={registrationDraft?.parent_guardian_signature || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, parent_guardian_signature: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                          ) : <span className="font-semibold">{selectedRegistration.parent_guardian_signature || '—'}</span>}
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Fecha Firma:</span>{' '}
+                          {isEditingRegistration ? (
+                            <input type="date" value={registrationDraft?.parent_guardian_signed_at || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, parent_guardian_signed_at: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                          ) : <span className="font-semibold">{selectedRegistration.parent_guardian_signed_at || '—'}</span>}
+                        </div>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Características Físicas */}
                 <div className="bg-navy/5 rounded-lg p-4">
                   <h3 className="font-bold text-navy mb-2">Características Físicas</h3>
                   <div className="space-y-1">
-                    <div><span className="text-gray-500">Cabello:</span> <span className="font-semibold">{selectedRegistration.hair_color || '—'}</span></div>
-                    <div><span className="text-gray-500">Ojos:</span> <span className="font-semibold">{selectedRegistration.eye_color || '—'}</span></div>
-                    <div><span className="text-gray-500">Estatura:</span> <span className="font-semibold">{selectedRegistration.height_feet || '—'}&apos; {selectedRegistration.height_inches || '—'}&quot;</span></div>
+                    <div>
+                      <span className="text-gray-500">Cabello:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.hair_color || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, hair_color: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.hair_color || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Ojos:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="text" value={registrationDraft?.eye_color || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, eye_color: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.eye_color || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Estatura (pies/pulgadas):</span>{' '}
+                      {isEditingRegistration ? (
+                        <div className="flex gap-2 mt-1">
+                          <input type="number" min="3" max="8" value={registrationDraft?.height_feet || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, height_feet: e.target.value } : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Pies" />
+                          <input type="number" min="0" max="11" value={registrationDraft?.height_inches || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, height_inches: e.target.value } : null)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Pulgadas" />
+                        </div>
+                      ) : <span className="font-semibold">{selectedRegistration.height_feet || '—'}&apos; {selectedRegistration.height_inches || '—'}&quot;</span>}
+                    </div>
                   </div>
                 </div>
 
-                {/* Embarcación */}
                 <div className="bg-navy/5 rounded-lg p-4">
                   <h3 className="font-bold text-navy mb-2">Embarcación</h3>
                   <div className="space-y-1">
-                    <div><span className="text-gray-500">Tipo:</span> <span className="font-semibold">{selectedRegistration.boat_type || '—'}</span></div>
-                    <div><span className="text-gray-500">Eslora:</span> <span className="font-semibold">{selectedRegistration.boat_length || '—'}</span></div>
-                    <div><span className="text-gray-500">Remolque:</span> <span className="font-semibold">{selectedRegistration.has_trailer || '—'}</span></div>
-                    <div><span className="text-gray-500">Experiencia:</span> <span className="font-semibold">{selectedRegistration.years_experience || '—'} años</span></div>
-                    <div><span className="text-gray-500">Motor:</span> <span className="font-semibold">{selectedRegistration.motor_power || '—'} HP</span></div>
+                    <div>
+                      <span className="text-gray-500">Tipo:</span>{' '}
+                      {isEditingRegistration ? (
+                        <select value={registrationDraft?.boat_type || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, boat_type: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
+                          {BOAT_TYPE_OPTIONS.map(opt => <option key={opt.value || 'empty'} value={opt.value}>{opt.label}</option>)}
+                        </select>
+                      ) : <span className="font-semibold">{selectedRegistration.boat_type || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Eslora:</span>{' '}
+                      {isEditingRegistration ? (
+                        <select value={registrationDraft?.boat_length || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, boat_length: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
+                          {BOAT_LENGTH_OPTIONS.map(opt => <option key={opt.value || 'empty'} value={opt.value}>{opt.label}</option>)}
+                        </select>
+                      ) : <span className="font-semibold">{selectedRegistration.boat_length || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Remolque:</span>{' '}
+                      {isEditingRegistration ? (
+                        <select value={registrationDraft?.has_trailer || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, has_trailer: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg">
+                          <option value="">Selecciona...</option>
+                          <option value="Si">Sí</option>
+                          <option value="No">No</option>
+                        </select>
+                      ) : <span className="font-semibold">{selectedRegistration.has_trailer || '—'}</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Experiencia:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="number" min="0" value={registrationDraft?.years_experience || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, years_experience: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.years_experience || '—'} años</span>}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Motor:</span>{' '}
+                      {isEditingRegistration ? (
+                        <input type="number" min="0" value={registrationDraft?.motor_power || ''} onChange={(e) => setRegistrationDraft(prev => prev ? { ...prev, motor_power: e.target.value } : null)} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg" />
+                      ) : <span className="font-semibold">{selectedRegistration.motor_power || '—'} HP</span>}
+                    </div>
                   </div>
                 </div>
 
-                {/* Documento de ID */}
                 <div className="md:col-span-2 bg-navy/5 rounded-lg p-4">
                   <h3 className="font-bold text-navy mb-2 flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Documento de Identificación
                   </h3>
-                      {selectedRegistration.id_document_url ? (
-                    <div className="flex items-center gap-4">
+                  {selectedRegistration.id_document_url ? (
+                    <div className="flex items-center gap-4 flex-wrap">
                       {selectedRegistration.id_document_path?.match(/\.(jpg|jpeg|png)$/i) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={selectedRegistration.id_document_url} alt="Documento de ID" className="max-w-xs max-h-48 rounded-lg border" />
@@ -811,9 +1618,30 @@ export default function AdminPage() {
                   ) : (
                     <p className="text-gray-500">No se subió documento de identificación.</p>
                   )}
+                  {isEditingRegistration && (
+                    <div className="mt-3">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,application/pdf"
+                        disabled={uploadingRegistrationId}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            await uploadRegistrationIdDocument(selectedRegistration.id, file);
+                          }
+                          e.target.value = '';
+                        }}
+                        className="block text-sm"
+                      />
+                      {uploadingRegistrationId && (
+                        <p className="text-sm text-navy mt-2 flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Subiendo documento...
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Pago */}
                 <div className="md:col-span-2 bg-navy/5 rounded-lg p-4">
                   <h3 className="font-bold text-navy mb-2">Información de Pago</h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -824,7 +1652,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Tracking Number (solo si pidió envío de libro) */}
                 {selectedRegistration.wants_book_shipping && (
                   <div className="md:col-span-2 bg-maritime-gold/10 border border-maritime-gold rounded-lg p-4">
                     <h3 className="font-bold text-navy mb-2 flex items-center gap-2">
@@ -848,6 +1675,106 @@ export default function AdminPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== MODAL NUEVA MATRÍCULA MANUAL ===== */}
+        {manualModalOpen && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-20 pb-10 px-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 relative">
+              <button
+                type="button"
+                onClick={requestCloseManualModal}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <h2 className="text-2xl font-bold text-navy mb-4">Nueva matrícula (pago en persona)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input className="input-field" placeholder="Título del curso" value={manualDraft.course_name} onChange={(e) => setManualDraft(prev => ({ ...prev, course_name: e.target.value }))} />
+                <input type="date" className="input-field" placeholder="Fecha del curso" value={manualDraft.course_date} onChange={(e) => setManualDraft(prev => ({ ...prev, course_date: e.target.value }))} />
+                <input className="input-field" placeholder="Nombre *" value={manualDraft.full_name} onChange={(e) => setManualDraft(prev => ({ ...prev, full_name: e.target.value }))} />
+                <input className="input-field" placeholder="Apellido" value={manualDraft.last_name} onChange={(e) => setManualDraft(prev => ({ ...prev, last_name: e.target.value }))} />
+                <input className="input-field" placeholder="Dirección postal" value={manualDraft.postal_address} onChange={(e) => setManualDraft(prev => ({ ...prev, postal_address: e.target.value }))} />
+                <input className="input-field" placeholder="Dirección física" value={manualDraft.physical_address} onChange={(e) => setManualDraft(prev => ({ ...prev, physical_address: e.target.value }))} />
+                <input className="input-field" placeholder="Ciudad" value={manualDraft.city} onChange={(e) => setManualDraft(prev => ({ ...prev, city: e.target.value }))} />
+                <input className="input-field" placeholder="País" value={manualDraft.country} onChange={(e) => setManualDraft(prev => ({ ...prev, country: e.target.value }))} />
+                <input className="input-field" placeholder="Código postal" value={manualDraft.zip_code} onChange={(e) => setManualDraft(prev => ({ ...prev, zip_code: e.target.value }))} />
+                <input type="tel" className="input-field" placeholder="Teléfono *" value={manualDraft.phone} onChange={(e) => setManualDraft(prev => ({ ...prev, phone: e.target.value }))} />
+                <input type="tel" className="input-field" placeholder="Celular" value={manualDraft.cellphone} onChange={(e) => setManualDraft(prev => ({ ...prev, cellphone: e.target.value }))} />
+                <input type="email" className="input-field" placeholder="Email *" value={manualDraft.email} onChange={(e) => setManualDraft(prev => ({ ...prev, email: e.target.value }))} />
+                <select className="input-field" value={manualDraft.gender} onChange={(e) => setManualDraft(prev => ({ ...prev, gender: e.target.value }))}>
+                  <option value="">Sexo *</option>
+                  <option value="M">Masculino (M)</option>
+                  <option value="F">Femenino (F)</option>
+                </select>
+                <input type="date" className="input-field" placeholder="Fecha nacimiento *" value={manualDraft.birth_date} onChange={(e) => setManualDraft(prev => ({ ...prev, birth_date: e.target.value }))} />
+                <input className="input-field" placeholder="Color de cabello" value={manualDraft.hair_color} onChange={(e) => setManualDraft(prev => ({ ...prev, hair_color: e.target.value }))} />
+                <input className="input-field" placeholder="Color de ojos" value={manualDraft.eye_color} onChange={(e) => setManualDraft(prev => ({ ...prev, eye_color: e.target.value }))} />
+                <input type="number" min="3" max="8" className="input-field" placeholder="Estatura pies" value={manualDraft.height_feet} onChange={(e) => setManualDraft(prev => ({ ...prev, height_feet: e.target.value }))} />
+                <input type="number" min="0" max="11" className="input-field" placeholder="Estatura pulgadas" value={manualDraft.height_inches} onChange={(e) => setManualDraft(prev => ({ ...prev, height_inches: e.target.value }))} />
+                <select className="input-field" value={manualDraft.boat_type} onChange={(e) => setManualDraft(prev => ({ ...prev, boat_type: e.target.value }))}>
+                  {BOAT_TYPE_OPTIONS.map(opt => <option key={`manual-boat-type-${opt.value || 'empty'}`} value={opt.value}>{opt.label}</option>)}
+                </select>
+                <select className="input-field" value={manualDraft.boat_length} onChange={(e) => setManualDraft(prev => ({ ...prev, boat_length: e.target.value }))}>
+                  {BOAT_LENGTH_OPTIONS.map(opt => <option key={`manual-boat-length-${opt.value || 'empty'}`} value={opt.value}>{opt.label}</option>)}
+                </select>
+                <select className="input-field" value={manualDraft.has_trailer} onChange={(e) => setManualDraft(prev => ({ ...prev, has_trailer: e.target.value }))}>
+                  <option value="">Remolque</option>
+                  <option value="Si">Sí</option>
+                  <option value="No">No</option>
+                </select>
+                <input type="number" min="0" className="input-field" placeholder="Años de experiencia" value={manualDraft.years_experience} onChange={(e) => setManualDraft(prev => ({ ...prev, years_experience: e.target.value }))} />
+                <input type="number" min="0" className="input-field" placeholder="Potencia motor" value={manualDraft.motor_power} onChange={(e) => setManualDraft(prev => ({ ...prev, motor_power: e.target.value }))} />
+                <input className="input-field" placeholder="Tracking (opcional)" value={manualDraft.tracking_number} onChange={(e) => setManualDraft(prev => ({ ...prev, tracking_number: e.target.value }))} />
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <label className="text-sm font-semibold text-navy">Menor de edad</label>
+                <select
+                  className="input-field max-w-xs"
+                  value={manualDraft.is_minor ? 'Si' : 'No'}
+                  onChange={(e) => setManualDraft(prev => ({ ...prev, is_minor: e.target.value === 'Si' }))}
+                >
+                  <option value="Si">Sí</option>
+                  <option value="No">No</option>
+                </select>
+                <label className="text-sm font-semibold text-navy ml-4">Envío de libro (+$13)</label>
+                <input
+                  type="checkbox"
+                  checked={manualDraft.wants_book_shipping}
+                  onChange={(e) => setManualDraft(prev => ({ ...prev, wants_book_shipping: e.target.checked }))}
+                />
+              </div>
+
+              {manualDraft.is_minor && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  <input className="input-field" placeholder="Firma padre/tutor" value={manualDraft.parent_guardian_signature} onChange={(e) => setManualDraft(prev => ({ ...prev, parent_guardian_signature: e.target.value }))} />
+                  <input type="date" className="input-field" placeholder="Fecha firma padre/tutor" value={manualDraft.parent_guardian_signed_at} onChange={(e) => setManualDraft(prev => ({ ...prev, parent_guardian_signed_at: e.target.value }))} />
+                </div>
+              )}
+
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-navy mb-2">Documento de ID (opcional)</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,application/pdf"
+                  onChange={(e) => setManualIdFile(e.target.files?.[0] || null)}
+                />
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button type="button" className="btn-secondary text-sm" onClick={requestCloseManualModal}>Cancelar</button>
+                <button
+                  type="button"
+                  className="btn-primary text-sm disabled:opacity-50"
+                  onClick={() => void createManualRegistration()}
+                  disabled={manualSaving}
+                >
+                  {manualSaving ? 'Guardando...' : 'Crear matrícula manual'}
+                </button>
               </div>
             </div>
           </div>
@@ -1146,41 +2073,120 @@ export default function AdminPage() {
         {/* ===== CONFIGURACIÓN ===== */}
         {activeTab === 'config' && (
           <div className="space-y-6">
-            <div className="card max-w-lg">
-              <h2 className="text-2xl font-bold text-navy mb-6 flex items-center gap-3">
-                <Settings className="w-6 h-6" /> Configuración del Curso
+            <div className="flex flex-col lg:flex-row gap-8 items-start max-w-5xl">
+              <div className="card flex-1 w-full max-w-lg">
+                <h2 className="text-2xl font-bold text-navy mb-6 flex items-center gap-3">
+                  <Settings className="w-6 h-6" /> Configuración del Curso
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Selecciona el mes y año de la sección de curso actual. Esto se mostrará automáticamente
+                  en el formulario de matrícula como parte del título del curso.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="input-label">Mes del Curso</label>
+                    <select value={configMonth} onChange={(e) => setConfigMonth(e.target.value)} className="input-field">
+                      {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="input-label">Año del Curso</label>
+                    <input type="number" value={configYear} onChange={(e) => setConfigYear(e.target.value)} min="2024" max="2030" className="input-field" />
+                  </div>
+
+                  <div className="bg-navy/5 rounded-lg p-4">
+                    <p className="text-sm text-gray-500">Vista previa del título:</p>
+                    <p className="font-bold text-navy text-lg">Curso Básico De Navegación - {configMonth} - {configYear}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card flex-1 w-full max-w-lg">
+                <h2 className="text-xl font-bold text-navy mb-4">Disponibilidad de páginas públicas</h2>
+                <p className="text-gray-600 text-sm mb-6">
+                  Cuando una opción está <strong>Desactivada</strong>, la ruta ya no estará disponible para visitantes
+                  (redirige al inicio) y se ocultan enlaces correspondientes en el sitio.
+                </p>
+                <div className="space-y-6">
+                  <div>
+                    <label className="input-label">Página de Examen Oficial</label>
+                    <select
+                      value={officialExamEnabled ? 'Activada' : 'Desactivada'}
+                      onChange={(e) => setOfficialExamEnabled(e.target.value === 'Activada')}
+                      className="input-field"
+                    >
+                      <option value="Activada">Activada</option>
+                      <option value="Desactivada">Desactivada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="input-label">Página de Matrícula</label>
+                    <select
+                      value={enrollmentEnabled ? 'Activada' : 'Desactivada'}
+                      onChange={(e) => setEnrollmentEnabled(e.target.value === 'Activada')}
+                      className="input-field"
+                    >
+                      <option value="Activada">Activada</option>
+                      <option value="Desactivada">Desactivada</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-5xl space-y-4">
+              <button onClick={saveConfig} disabled={savingConfig} className="btn-primary w-full sm:w-auto disabled:opacity-50">
+                {savingConfig ? 'Guardando...' : 'Guardar Configuración'}
+              </button>
+              {configMessage && (
+                <p className={`text-sm font-semibold ${configMessage.includes('Error') ? 'text-maritime-red' : 'text-maritime-green'}`}>
+                  {configMessage}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {unsavedPrompt && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-unsaved-dialog-title"
+          >
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 border border-gray-200">
+              <h2 id="admin-unsaved-dialog-title" className="text-lg font-bold text-navy">
+                Cambios sin guardar
               </h2>
-              <p className="text-gray-600 mb-6">
-                Selecciona el mes y año de la sección de curso actual. Esto se mostrará automáticamente
-                en el formulario de matrícula como parte del título del curso.
+              <p className="text-sm text-gray-600">
+                Hay información modificada que aún no se ha guardado. Si sales ahora, esos cambios se
+                perderán salvo que los guardes antes.
               </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="input-label">Mes del Curso</label>
-                  <select value={configMonth} onChange={(e) => setConfigMonth(e.target.value)} className="input-field">
-                    {MESES.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="input-label">Año del Curso</label>
-                  <input type="number" value={configYear} onChange={(e) => setConfigYear(e.target.value)} min="2024" max="2030" className="input-field" />
-                </div>
-
-                {/* Preview del título */}
-                <div className="bg-navy/5 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">Vista previa del título:</p>
-                  <p className="font-bold text-navy text-lg">Curso Básico De Navegación - {configMonth} - {configYear}</p>
-                </div>
-
-                <button onClick={saveConfig} disabled={savingConfig} className="btn-primary w-full disabled:opacity-50">
-                  {savingConfig ? 'Guardando...' : 'Guardar Configuración'}
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
+                <button
+                  type="button"
+                  className="btn-secondary text-sm"
+                  onClick={handleCancelUnsavedPrompt}
+                  disabled={unsavedPromptSaving}
+                >
+                  Continuar Editando
                 </button>
-
-                {configMessage && (
-                  <p className={`text-center text-sm font-semibold ${configMessage.includes('Error') ? 'text-maritime-red' : 'text-maritime-green'}`}>
-                    {configMessage}
-                  </p>
-                )}
+                <button
+                  type="button"
+                  className="btn-secondary text-sm border-maritime-red/40 text-maritime-red hover:bg-maritime-red/5"
+                  onClick={handleDiscardUnsaved}
+                  disabled={unsavedPromptSaving}
+                >
+                  Salir sin guardar
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary text-sm disabled:opacity-50"
+                  onClick={() => void handleSaveUnsavedAndProceed()}
+                  disabled={unsavedPromptSaving}
+                >
+                  {unsavedPromptSaving ? 'Guardando…' : 'Guardar datos'}
+                </button>
               </div>
             </div>
           </div>

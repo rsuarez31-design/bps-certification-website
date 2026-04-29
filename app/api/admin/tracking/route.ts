@@ -5,11 +5,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
+import { hasValidAdminSession } from '@/lib/admin-session';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(request: NextRequest) {
   try {
+    if (!hasValidAdminSession(request)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
     const body = await request.json();
     const { registrationId, trackingNumber } = body;
 

@@ -11,6 +11,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
 /**
  * Configuración de la fuente Inter de Google Fonts
@@ -29,6 +30,9 @@ const inter = Inter({
  * - Redes sociales (cómo se ve cuando se comparte el link)
  * - Navegadores (título de la pestaña, favicon, etc.)
  */
+/** Navbar/Footer dependen de site_config (visibilidad examen/matrícula); evitar HTML estático obsoleto. */
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Americas Boating Club - Boqueron Power Squadron | Certificación Ley 430 PR',
   description: 'Sistema de certificación oficial de navegación según la Ley 430 de Puerto Rico. Curso completo, examen en línea y certificado digital.',
@@ -50,11 +54,13 @@ export const metadata: Metadata = {
  * 
  * @param children - Contenido de la página actual
  */
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const visibility = await getSiteVisibilityFlags();
+
   return (
     <html lang="es" className="scroll-smooth">
       {/* 
@@ -68,7 +74,10 @@ export default function RootLayout({
         */}
         
         {/* Barra de navegación superior - aparece en todas las páginas */}
-        <Navbar />
+        <Navbar
+          enrollmentEnabled={visibility.enrollmentEnabled}
+          officialExamEnabled={visibility.officialExamEnabled}
+        />
         
         {/* 
           Contenido principal de la página
@@ -79,7 +88,10 @@ export default function RootLayout({
         </main>
         
         {/* Footer (pie de página) - aparece en todas las páginas */}
-        <Footer />
+        <Footer
+          enrollmentEnabled={visibility.enrollmentEnabled}
+          officialExamEnabled={visibility.officialExamEnabled}
+        />
       </body>
     </html>
   );

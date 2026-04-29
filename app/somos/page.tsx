@@ -14,13 +14,15 @@ import {
 import AnimatedSection from '@/components/AnimatedSection';
 import Counter from '@/components/Counter';
 import type { Metadata } from 'next';
+import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
 export const metadata: Metadata = {
   title: 'Somos | Americas Boating Club - Boquerón Power Squadron',
   description: 'Conoce la historia, misión y valores de Americas Boating Club - Boquerón Power Squadron. Más de 30 años promoviendo la navegación segura en Puerto Rico.',
 };
 
-export default function SomosPage() {
+export default async function SomosPage() {
+  const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (
     <div className="min-h-screen">
       {/* Hero con imagen de fondo */}
@@ -222,10 +224,12 @@ export default function SomosPage() {
               El proceso es sencillo y te preparamos para navegar con confianza.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/matricula" className="btn-gold">
-                Inscríbete Ahora
-                <ChevronRight className="inline w-5 h-5 ml-1" />
-              </Link>
+              {enrollmentEnabled && (
+                <Link href="/matricula" className="btn-gold">
+                  Inscríbete Ahora
+                  <ChevronRight className="inline w-5 h-5 ml-1" />
+                </Link>
+              )}
               <Link href="/practica" className="btn-secondary">
                 Examen de Práctica
               </Link>

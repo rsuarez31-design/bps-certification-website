@@ -8,8 +8,10 @@
 
 import Link from 'next/link';
 import { Anchor, Home, ArrowLeft } from 'lucide-react';
+import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
-export default function NotFound() {
+export default async function NotFound() {
+  const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (
     <div className="min-h-screen bg-ice flex items-center justify-center pt-28 pb-12">
       <div className="container-custom max-w-2xl text-center">
@@ -39,13 +41,15 @@ export default function NotFound() {
             <Home className="w-5 h-5" />
             Ir al Inicio
           </Link>
-          <Link
-            href="/matricula"
-            className="btn-secondary flex items-center justify-center gap-2 text-lg"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Inscríbete Ahora
-          </Link>
+          {enrollmentEnabled && (
+            <Link
+              href="/matricula"
+              className="btn-secondary flex items-center justify-center gap-2 text-lg"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Inscríbete Ahora
+            </Link>
+          )}
         </div>
       </div>
     </div>
