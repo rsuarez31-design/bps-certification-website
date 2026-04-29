@@ -111,13 +111,13 @@ git push -u origin main
 En la seccion "Environment Variables", agrega TODAS estas:
 
 
-| Variable                        | Valor                                                                                            |
-| ------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_SUPABASE_URL`      | URL de tu proyecto Supabase                                                                      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anon de Supabase                                                                           |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Clave de servicio de Supabase                                                                    |
-| `STRIPE_SECRET_KEY`             | Clave secreta de Stripe                                                                          |
-| `STRIPE_WEBHOOK_SECRET`         | Secreto del webhook de Stripe                                                                    |
+| Variable                        | Valor                                                                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | URL de tu proyecto Supabase                                                                                                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anon de Supabase                                                                                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Clave de servicio de Supabase                                                                                                |
+| `STRIPE_SECRET_KEY`             | Clave secreta de Stripe                                                                                                      |
+| `STRIPE_WEBHOOK_SECRET`         | Secreto del webhook de Stripe                                                                                                |
 | `NEXT_PUBLIC_SITE_URL`          | URL de tu sitio en Vercel (ej: [https://bps-certification-website.vercel.app](https://bps-certification-website.vercel.app)) |
 
 
