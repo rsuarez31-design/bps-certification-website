@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   description: 'Conoce la historia, misión y valores de Americas Boating Club - Boquerón Power Squadron. Más de 30 años promoviendo la navegación segura en Puerto Rico.',
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function SomosPage() {
   const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (

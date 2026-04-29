@@ -90,6 +90,7 @@ export async function PUT(request: NextRequest) {
     const enrollOn = parseBool(enrollment_enabled, true);
 
     const patch = {
+      id: 'default',
       course_month,
       course_year,
       official_exam_enabled: examOn,
@@ -97,7 +98,12 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabaseAdmin.from('site_config').update(patch).eq('id', 'default');
+    const { data: upserted, error } = await supabaseAdmin
+      .from('site_config')
+      .upsert(patch, { onConflict: 'id' })
+      .select('course_month, course_year, official_exam_enabled, enrollment_enabled')
+      .eq('id', 'default')
+      .maybeSingle();
 
     if (error) {
       if (isMissingSiteConfigVisibilityColumnsError(error)) {
@@ -108,7 +114,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    if (!upserted) {
+      console.error('[PUT /api/admin/config] Upsert sin fila devuelta');
+      return NextResponse.json(
+        { error: 'No se pudo persistir la configuración (fila no encontrada tras upsert).' },
+        { status: 500 },
+      );
+    }
+
+    const persisted = upserted as Record<string, unknown>;
+    return NextResponse.json({
+      success: true,
+      course_month: persisted.course_month,
+      course_year: persisted.course_year,
+      official_exam_enabled: parseVisibilityBool(persisted.official_exam_enabled, true),
+      enrollment_enabled: parseVisibilityBool(persisted.enrollment_enabled, true),
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('Error inesperado en PUT config:', err);

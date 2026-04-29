@@ -16,6 +16,9 @@ import AnimatedSection from '@/components/AnimatedSection';
 import Counter from '@/components/Counter';
 import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (

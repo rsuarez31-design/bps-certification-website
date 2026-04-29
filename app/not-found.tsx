@@ -10,6 +10,9 @@ import Link from 'next/link';
 import { Anchor, Home, ArrowLeft } from 'lucide-react';
 import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function NotFound() {
   const { enrollmentEnabled } = await getSiteVisibilityFlags();
   return (

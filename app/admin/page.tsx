@@ -15,6 +15,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-client';
+import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
 import {
   Lock, Users, AlertTriangle,
   Eye, ClipboardList,
@@ -505,7 +506,6 @@ export default function AdminPage() {
         break;
       }
       case 'config': {
-        if (!force && !isStale('config')) return;
         await loadConfig();
         break;
       }
@@ -514,9 +514,16 @@ export default function AdminPage() {
 
   // Al iniciar sesion o al activar una pestana, cargamos sus datos si estan
   // stale (respeta TTL). Con esto eliminamos el "loadAllData" pesado.
+  // Excepción: la pestaña de configuración siempre fuerza recarga al abrirse,
+  // para que los dropdowns reflejen exactamente lo que está hoy en la BD.
   useEffect(() => {
     if (!isAuthenticated) return;
-    reloadActiveTab({ force: false });
+    if (activeTab === 'config') {
+      markStale('config');
+      reloadActiveTab({ force: true });
+    } else {
+      reloadActiveTab({ force: false });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, activeTab]);
 
@@ -532,9 +539,12 @@ export default function AdminPage() {
   }, [filterMonth, filterYear]);
 
   // --- Cargar configuración del curso ---
+  // Siempre pide datos frescos al servidor (cache: 'no-store') y usa el mismo
+  // parseo de booleanos que la API para que los toggles reflejen exactamente
+  // lo que hay en site_config en este momento.
   const loadConfig = async () => {
     try {
-      const res = await fetch('/api/admin/config');
+      const res = await fetch('/api/admin/config', { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) {
         const hint =
@@ -544,15 +554,22 @@ export default function AdminPage() {
         setConfigMessage(hint);
         return;
       }
-      if (data.course_month) setConfigMonth(data.course_month);
-      if (data.course_year) setConfigYear(String(data.course_year));
-      setOfficialExamEnabled(data.official_exam_enabled !== false);
-      setEnrollmentEnabled(data.enrollment_enabled !== false);
+      const month =
+        typeof data.course_month === 'string' && data.course_month
+          ? data.course_month
+          : 'Enero';
+      const year = data.course_year != null ? String(data.course_year) : '2026';
+      const examOn = parseVisibilityBool(data.official_exam_enabled, true);
+      const enrollOn = parseVisibilityBool(data.enrollment_enabled, true);
+      setConfigMonth(month);
+      setConfigYear(year);
+      setOfficialExamEnabled(examOn);
+      setEnrollmentEnabled(enrollOn);
       setSavedConfigSnapshot({
-        course_month: data.course_month || 'Enero',
-        course_year: String(data.course_year ?? '2026'),
-        official_exam_enabled: data.official_exam_enabled !== false,
-        enrollment_enabled: data.enrollment_enabled !== false,
+        course_month: month,
+        course_year: year,
+        official_exam_enabled: examOn,
+        enrollment_enabled: enrollOn,
       });
       markFresh('config');
     } catch (err) {
@@ -577,11 +594,29 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
+        const persistedExam =
+          typeof data.official_exam_enabled === 'boolean'
+            ? data.official_exam_enabled
+            : officialExamEnabled;
+        const persistedEnroll =
+          typeof data.enrollment_enabled === 'boolean'
+            ? data.enrollment_enabled
+            : enrollmentEnabled;
+        const persistedMonth =
+          typeof data.course_month === 'string' && data.course_month
+            ? data.course_month
+            : configMonth;
+        const persistedYear =
+          data.course_year != null ? String(data.course_year) : String(configYear);
+        setOfficialExamEnabled(persistedExam);
+        setEnrollmentEnabled(persistedEnroll);
+        setConfigMonth(persistedMonth);
+        setConfigYear(persistedYear);
         setSavedConfigSnapshot({
-          course_month: configMonth,
-          course_year: String(configYear),
-          official_exam_enabled: officialExamEnabled,
-          enrollment_enabled: enrollmentEnabled,
+          course_month: persistedMonth,
+          course_year: persistedYear,
+          official_exam_enabled: persistedExam,
+          enrollment_enabled: persistedEnroll,
         });
         setConfigMessage('Configuración guardada exitosamente.');
         return true;
@@ -1127,6 +1162,27 @@ export default function AdminPage() {
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [isAuthenticated, hasAnyUnsavedWork]);
+
+  // Si el admin tiene la pestaña de configuración abierta y vuelve a la
+  // ventana (cambio de pestaña del navegador, otra sesión actualizó la BD),
+  // releemos site_config para que los dropdowns reflejen el valor actual.
+  // No lo hacemos si hay cambios sin guardar para no pisar el trabajo.
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== 'config') return;
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (configDirty) return;
+      markStale('config');
+      void loadConfig();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, activeTab, configDirty]);
 
   // ===== PANTALLA DE LOGIN =====
   if (!isAuthenticated) {

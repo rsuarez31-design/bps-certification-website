@@ -4,6 +4,7 @@
  */
 
 import { cache } from 'react';
+import { unstable_noStore as noStore } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { isMissingSiteConfigVisibilityColumnsError } from '@/lib/site-config-errors';
 import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
@@ -33,6 +34,7 @@ const SITE_CONFIG_LOG_HINT_MISSING_COL =
  * - Otros errores de lectura: fallback "todo visible" + log (sitio usable si Supabase falla).
  */
 async function loadSiteVisibilityFlags(): Promise<SiteVisibilityFlags> {
+  noStore();
   try {
     const { data, error } = await supabaseAdmin
       .from('site_config')
