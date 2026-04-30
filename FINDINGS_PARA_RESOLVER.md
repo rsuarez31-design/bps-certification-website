@@ -73,7 +73,7 @@ Tras deduplicar hallazgos que varios agentes reportaron en común:
 1. Emitir sesión servidor tras `POST /api/admin/verify`: cookie **HttpOnly + Secure + SameSite=Lax**, firmada con secreto propio (p. ej. JWT HS256 con `jose`) con TTL corto (30-60 min) y sliding expiration.
 2. Crear helper `requireAdmin(request)` que lea la cookie, valide la firma y el TTL, y devuelva `401` si falla.
 3. Aplicar `requireAdmin` como primera línea en cada handler de `/api/admin/`* antes de tocar `supabaseAdmin`.
-4. (Opcional, capa extra) Añadir `middleware.ts` que rechace cualquier `/api/admin/*` sin cookie válida.
+4. (Opcional, capa extra) Añadir `middleware.ts` que rechace cualquier `/api/admin/`* sin cookie válida.
 5. El `page.tsx` del admin no cambia: la cookie viaja automáticamente en los `fetch` del mismo origen.
 
 ---
@@ -415,7 +415,7 @@ Tras deduplicar hallazgos que varios agentes reportaron en común:
 | A5-05         | Baja      | `NEXT_PUBLIC_SITE_URL                                                                                                              |
 | A9-02 / A6-11 | Media     | `next.config.js` sin `headers()` — falta CSP, HSTS, X-Frame-Options, Referrer-Policy, X-Content-Type-Options.                      |
 | A9-03         | Baja      | TypeScript: falta `noUncheckedIndexedAccess`.                                                                                      |
-| A9-04         | Baja      | Workflow `keep-supabase-alive.yml`: sin `permissions: {}`; cron `0 8 */5 * `* significa días 1, 6, 11… no "cada 5 días naturales". |
+| A9-04         | Baja      | Workflow `keep-supabase-alive.yml`: sin `permissions: {}`; cron `0 8 */5 *` * significa días 1, 6, 11… no "cada 5 días naturales". |
 | A9-05         | Media     | Rangos `^` sin ejecutar `npm audit` ni Dependabot.                                                                                 |
 | A9-07         | Baja      | Regla Cursor hace `git add -A` masivo.                                                                                             |
 | A9-08         | Baja      | Dos `package-lock.json` duplicados.                                                                                                |
@@ -505,8 +505,8 @@ Este orden minimiza riesgo y evita introducir regresiones (los cambios tempranos
 - `**stripe_checkout_session_id` y `stripe_payment_intent_id`** se persisten para auditoría (A4-17).
 - `**robots: { index: false, follow: false }**` en el layout del admin.
 - `**useSearchParams` envuelto en `<Suspense>**` en `/matricula` y `/pago-exitoso` (A8-06).
-- **No hay `dangerouslySetInnerHTML`** en todo el repo.
-- `**SUPABASE_SERVICE_ROLE_KEY` solo en servidor**; no hay prefijo `NEXT_PUBLIC_` aplicado a secretos.
+- **No hay `dangerouslySetInnerHTML**` en todo el repo.
+- `**SUPABASE_SERVICE_ROLE_KEY` solo en servidor**; no hay prefijo `NEXT_PUBLIC`_ aplicado a secretos.
 - **Sin scripts `postinstall`/`preinstall`** — cadena de suministro reducida.
 - **Validación UUID estricta** en `eliminar-matricula-pendiente.ts` antes de borrar.
 - `**force-dynamic`** correctamente aplicado a las rutas API dinámicas.

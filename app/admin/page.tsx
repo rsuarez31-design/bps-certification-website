@@ -17,6 +17,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
 import CertificateViewerModal from '@/components/CertificateViewerModal';
+import DrnaReportModal from '@/components/DrnaReportModal';
 import {
   Lock, Users, AlertTriangle,
   Eye, ClipboardList,
@@ -277,6 +278,10 @@ export default function AdminPage() {
   const [certViewerOpen, setCertViewerOpen] = useState(false);
   const [certViewerUrl, setCertViewerUrl] = useState<string | null>(null);
   const [certViewerLoading, setCertViewerLoading] = useState(false);
+
+  // Reporte DRNA (no persiste nada)
+  const [drnaModalOpen, setDrnaModalOpen] = useState(false);
+  const [drnaButtonError, setDrnaButtonError] = useState<string | null>(null);
 
   // Configuración del curso
   const [configMonth, setConfigMonth] = useState('Enero');
@@ -1450,7 +1455,37 @@ export default function AdminPage() {
                   Quitar filtro mes/año
                 </button>
               )}
+
+              {/* Botón Reporte DRNA: requiere mes y año específicos */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setDrnaButtonError(null);
+                  if (filterMonth === 'Todos' || filterYear === 'Todos') {
+                    setDrnaButtonError('Selecciona un mes y un año específicos para generar el Reporte DRNA.');
+                    return;
+                  }
+                  if (registrations.length === 0) {
+                    setDrnaButtonError('No hay matrículas para el mes y año seleccionados.');
+                    return;
+                  }
+                  // Asegurar que examAttempts esté cargado para calcular notas.
+                  if (examAttempts.length === 0) {
+                    await loadExams({ silent: true });
+                  }
+                  setDrnaModalOpen(true);
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-navy text-white hover:bg-navy/90 inline-flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" /> Reporte DRNA
+              </button>
             </div>
+
+            {drnaButtonError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg">
+                {drnaButtonError}
+              </div>
+            )}
 
             {/* Tabla de matrículas */}
             {registrations.length === 0 && !registrationsError ? (
@@ -2386,6 +2421,30 @@ export default function AdminPage() {
           onDownload={handleAdminCertDownload}
           onPrint={handleAdminCertPrint}
           onHome={closeCertificateViewer}
+        />
+
+        <DrnaReportModal
+          open={drnaModalOpen}
+          filterMonth={filterMonth}
+          filterYear={filterYear}
+          registrations={registrations.map((r) => ({
+            id: r.id,
+            full_name: r.full_name,
+            last_name: r.last_name,
+            birth_date: r.birth_date,
+            physical_address: r.physical_address,
+            postal_address: r.postal_address,
+            city: r.city,
+            zip_code: r.zip_code,
+          }))}
+          examAttempts={examAttempts.map((a) => ({
+            id: a.id,
+            registration_id: a.registration_id,
+            percentage: a.percentage,
+            passed: a.passed,
+            created_at: a.created_at,
+          }))}
+          onClose={() => setDrnaModalOpen(false)}
         />
 
         {unsavedPrompt && (
