@@ -16,12 +16,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
+import CertificateViewerModal from '@/components/CertificateViewerModal';
 import {
   Lock, Users, AlertTriangle,
   Eye, ClipboardList,
   LogOut, Settings, X, Download, Save,
   Package, FileText,
-  BookOpen, Image as ImageIcon, Upload, Trash2, Loader2, UserPlus, Pencil
+  BookOpen, Image as ImageIcon, Upload, Trash2, Loader2, UserPlus, Pencil, Award
 } from 'lucide-react';
 
 // --- Tipos de datos ---
@@ -70,12 +71,17 @@ interface ExamAttempt {
   created_at: string;
   student_name: string;
   student_email: string;
+  registration_id: string | null;
   exam_type: string;
   total_questions: number;
   correct_answers: number;
   incorrect_answers: number;
+  unanswered?: number;
   percentage: number;
   passed: boolean;
+  certificate_pdf_path?: string | null;
+  certificate_id?: string | null;
+  certificate_issued_at?: string | null;
 }
 
 interface FailedQuestion {
@@ -267,6 +273,10 @@ export default function AdminPage() {
   // Tracking number en edición
   const [editingTracking, setEditingTracking] = useState('');
   const [savingTracking, setSavingTracking] = useState(false);
+
+  const [certViewerOpen, setCertViewerOpen] = useState(false);
+  const [certViewerUrl, setCertViewerUrl] = useState<string | null>(null);
+  const [certViewerLoading, setCertViewerLoading] = useState(false);
 
   // Configuración del curso
   const [configMonth, setConfigMonth] = useState('Enero');
@@ -697,6 +707,7 @@ export default function AdminPage() {
       years_experience: registration.years_experience || '',
       motor_power: registration.motor_power || '',
     });
+    void loadExams({ silent: true });
   };
 
   const validateRegistrationDraft = (draft: RegistrationEditableFields): string[] => {
@@ -1183,6 +1194,118 @@ export default function AdminPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, activeTab, configDirty]);
+
+  const officialCertificateAttempt = useMemo(() => {
+    if (!selectedRegistration?.id) return null;
+    const list = examAttempts.filter(
+      (a) =>
+        a.registration_id === selectedRegistration.id &&
+        a.exam_type === 'oficial' &&
+        a.passed === true,
+    );
+    list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return list[0] ?? null;
+  }, [examAttempts, selectedRegistration?.id]);
+
+  const closeCertificateViewer = () => {
+    setCertViewerUrl((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setCertViewerOpen(false);
+    setCertViewerLoading(false);
+  };
+
+  const openCertificatePreview = async () => {
+    setCertViewerOpen(true);
+    setCertViewerLoading(true);
+    setCertViewerUrl((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return null;
+    });
+    try {
+      const res = await fetch('/api/admin/certificates/preview', { credentials: 'include' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(typeof err.error === 'string' ? err.error : 'No se pudo generar la vista previa.');
+        closeCertificateViewer();
+        return;
+      }
+      const blob = await res.blob();
+      setCertViewerUrl(URL.createObjectURL(blob));
+    } catch {
+      alert('Error de conexión.');
+      closeCertificateViewer();
+    } finally {
+      setCertViewerLoading(false);
+    }
+  };
+
+  const openCertificateForAttempt = async (attemptId: string) => {
+    setCertViewerOpen(true);
+    setCertViewerLoading(true);
+    setCertViewerUrl((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return null;
+    });
+    try {
+      const res = await fetch('/api/admin/certificates/url', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attemptId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(typeof data.error === 'string' ? data.error : 'No se pudo obtener el certificado.');
+        closeCertificateViewer();
+        return;
+      }
+      setCertViewerUrl(typeof data.signedUrl === 'string' ? data.signedUrl : null);
+    } catch {
+      alert('Error de conexión.');
+      closeCertificateViewer();
+    } finally {
+      setCertViewerLoading(false);
+    }
+  };
+
+  const handleAdminCertDownload = async () => {
+    if (!certViewerUrl) return;
+    try {
+      const r = await fetch(certViewerUrl);
+      const b = await r.blob();
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'certificado.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(certViewerUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleAdminCertPrint = () => {
+    if (!certViewerUrl) return;
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.src = certViewerUrl;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => document.body.removeChild(iframe), 500);
+      }
+    };
+  };
 
   // ===== PANTALLA DE LOGIN =====
   if (!isAuthenticated) {
@@ -1716,6 +1839,33 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                <div className="md:col-span-2 bg-navy/5 rounded-lg p-4">
+                  <h3 className="font-bold text-navy mb-2 flex items-center gap-2">
+                    <Award className="w-4 h-4" /> Certificado oficial (PDF)
+                  </h3>
+                  {officialCertificateAttempt ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void openCertificateForAttempt(officialCertificateAttempt.id)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-lg hover:bg-navy/80 text-sm font-semibold"
+                      >
+                        <Eye className="w-4 h-4" /> Ver certificado
+                      </button>
+                      {officialCertificateAttempt.certificate_issued_at ? (
+                        <span className="text-xs text-gray-600">
+                          Emitido:{' '}
+                          {new Date(officialCertificateAttempt.certificate_issued_at).toLocaleString('es-PR')}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-600">Se generará el PDF al abrirlo si aún no existe.</span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-600 text-sm">Sin certificado disponible: no hay examen oficial aprobado para esta matrícula.</p>
+                  )}
+                </div>
+
                 {selectedRegistration.wants_book_shipping && (
                   <div className="md:col-span-2 bg-maritime-gold/10 border border-maritime-gold rounded-lg p-4">
                     <h3 className="font-bold text-navy mb-2 flex items-center gap-2">
@@ -2198,6 +2348,23 @@ export default function AdminPage() {
               </div>
             </div>
 
+            <div className="card max-w-5xl w-full">
+              <h2 className="text-xl font-bold text-navy mb-2 flex items-center gap-2">
+                <FileText className="w-5 h-5" /> Vista previa del certificado oficial
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                Genera un PDF de muestra con nombre <strong>Juan Del Pueblo</strong> y fecha{' '}
+                <strong>01/01/2026</strong>. No se guarda en el servidor.
+              </p>
+              <button
+                type="button"
+                onClick={() => void openCertificatePreview()}
+                className="btn-secondary"
+              >
+                Ver preview del certificado
+              </button>
+            </div>
+
             <div className="max-w-5xl space-y-4">
               <button onClick={saveConfig} disabled={savingConfig} className="btn-primary w-full sm:w-auto disabled:opacity-50">
                 {savingConfig ? 'Guardando...' : 'Guardar Configuración'}
@@ -2210,6 +2377,16 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        <CertificateViewerModal
+          open={certViewerOpen}
+          pdfUrl={certViewerUrl}
+          loading={certViewerLoading}
+          homeLabel="Cerrar"
+          onDownload={handleAdminCertDownload}
+          onPrint={handleAdminCertPrint}
+          onHome={closeCertificateViewer}
+        />
 
         {unsavedPrompt && (
           <div

@@ -14,18 +14,19 @@
  * - Bloqueo en dispositivos móviles (< 768px)
  * - Si tiene 10+ incorrectas, aviso y 1 reintento por pregunta
  * - Si reprueba, muestra preguntas falladas SIN la respuesta correcta
- * - Los resultados se guardan en Supabase
+ * - Los resultados del examen oficial se calculan y guardan en el servidor (POST /api/exam/submit).
  */
 
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { ExamQuestion } from '@/data/examQuestions';
 import { cargarPreguntas, mezclarPreguntas } from '@/lib/questions-loader';
 import ExamQuestionComponent from '@/components/ExamQuestion';
 import ExamProgress from '@/components/ExamProgress';
-import { supabase } from '@/lib/supabase-client';
-import { ClipboardList, AlertCircle, XCircle, Award, RotateCcw, Download, Loader2, Monitor, Timer } from 'lucide-react';
+import CertificateViewerModal from '@/components/CertificateViewerModal';
+import { ClipboardList, AlertCircle, XCircle, Award, RotateCcw, Loader2, Monitor, Timer } from 'lucide-react';
 
 interface StudentAnswers {
   [questionId: number]: number;
@@ -38,6 +39,7 @@ interface ReintentoActivo {
 }
 
 export default function ExamenPageClient() {
+  const router = useRouter();
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [studentAnswers, setStudentAnswers] = useState<StudentAnswers>({});
@@ -80,6 +82,13 @@ export default function ExamenPageClient() {
 
   const [cargando, setCargando] = useState(false);
   const confettiRef = useRef<any>(null);
+
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
+  const [certificateViewerOpen, setCertificateViewerOpen] = useState(false);
+  const [certificateLoading, setCertificateLoading] = useState(false);
+  const [submittingExam, setSubmittingExam] = useState(false);
+  const [submitExamError, setSubmitExamError] = useState('');
 
   // Cargar confetti
   useEffect(() => {
@@ -284,70 +293,137 @@ export default function ExamenPageClient() {
       }
     }
 
-    if (timerRef.current) clearInterval(timerRef.current);
+    setSubmittingExam(true);
+    setSubmitExamError('');
 
-    let correct = 0;
-    let incorrect = 0;
-    questions.forEach((q) => {
-      const a = studentAnswers[q.id];
-      if (a === q.correctAnswer) correct++;
-      else if (a !== undefined) incorrect++;
-    });
-
-    const unanswered = questions.length - correct - incorrect;
-    const percentage = Math.round((correct / questions.length) * 100);
-    const passed = percentage >= 80;
-
-    setResults({ correct, incorrect, unanswered, percentage, passed, tiempoExpirado: autoFinalizado });
-    setExamStatus('completed');
-
-    if (passed && confettiRef.current) {
-      const fire = confettiRef.current;
-      const end = Date.now() + 3000;
-      const frame = () => {
-        fire({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#002855', '#FFD700', '#28A745'] });
-        fire({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#002855', '#FFD700', '#28A745'] });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      };
-      frame();
-    }
-
-    // Guardar en Supabase
     try {
-      const { data: attempt } = await supabase
-        .from('exam_attempts')
-        .insert({
-          student_name: studentName,
-          student_email: studentEmail.trim().toLowerCase(),
-          registration_id: registrationId || null,
-          exam_type: 'oficial',
-          total_questions: questions.length,
-          correct_answers: correct,
-          incorrect_answers: incorrect,
-          unanswered,
-          percentage,
-          passed,
-          completed_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const res = await fetch('/api/exam/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: studentEmail.trim().toLowerCase(),
+          registrationId,
+          totalQuestions: questions.length,
+          questionIds: questions.map((q) => q.id),
+          answers: studentAnswers,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
 
-      if (attempt) {
-        const answers = questions
-          .filter((q) => studentAnswers[q.id] !== undefined)
-          .map((q) => ({
-            attempt_id: attempt.id,
-            question_id: q.id,
-            selected_index: studentAnswers[q.id],
-            is_correct: studentAnswers[q.id] === q.correctAnswer,
-          }));
-        if (answers.length > 0) {
-          await supabase.from('exam_attempt_answers').insert(answers);
-        }
+      if (!res.ok) {
+        setSubmitExamError(typeof data.error === 'string' ? data.error : 'Error al guardar el examen.');
+        return;
       }
-    } catch (error) {
-      console.error('Error al guardar resultados:', error);
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
+      const passed = !!data.passed;
+      setAttemptId(typeof data.attemptId === 'string' ? data.attemptId : null);
+      setResults({
+        correct: Number(data.correct) || 0,
+        incorrect: Number(data.incorrect) || 0,
+        unanswered: Number(data.unanswered) || 0,
+        percentage: Number(data.percentage) || 0,
+        passed,
+        tiempoExpirado: autoFinalizado,
+      });
+      setExamStatus('completed');
+
+      if (passed && confettiRef.current) {
+        const fire = confettiRef.current;
+        const end = Date.now() + 3000;
+        const frame = () => {
+          fire({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#002855', '#FFD700', '#28A745'] });
+          fire({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#002855', '#FFD700', '#28A745'] });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        };
+        frame();
+      }
+    } catch {
+      setSubmitExamError('Error de conexión al guardar el examen.');
+    } finally {
+      setSubmittingExam(false);
     }
+  };
+
+  const openOfficialCertificate = async () => {
+    if (!attemptId) {
+      setSubmitExamError('No hay intento registrado para emitir el certificado.');
+      return;
+    }
+    setCertificateViewerOpen(true);
+    setCertificateLoading(true);
+    setCertificateUrl(null);
+    try {
+      const res = await fetch('/api/exam/certificate/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          attemptId,
+          email: studentEmail.trim().toLowerCase(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSubmitExamError(typeof data.error === 'string' ? data.error : 'No se pudo cargar el certificado.');
+        setCertificateViewerOpen(false);
+        return;
+      }
+      setCertificateUrl(typeof data.signedUrl === 'string' ? data.signedUrl : null);
+    } catch {
+      setSubmitExamError('Error de conexión al cargar el certificado.');
+      setCertificateViewerOpen(false);
+    } finally {
+      setCertificateLoading(false);
+    }
+  };
+
+  const handleCertificateDownload = async () => {
+    if (!certificateUrl) return;
+    try {
+      const r = await fetch(certificateUrl);
+      const b = await r.blob();
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'certificado-oficial.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(certificateUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleCertificatePrint = () => {
+    if (!certificateUrl) return;
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.src = certificateUrl;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 500);
+      }
+    };
+  };
+
+  const handleCertificateHome = () => {
+    setCertificateViewerOpen(false);
+    router.push('/');
   };
 
   // Reiniciar
@@ -362,6 +438,11 @@ export default function ExamenPageClient() {
     setResults(null);
     setTiempoRestante(3 * 60 * 60);
     setTiempoExpirado(false);
+    setAttemptId(null);
+    setCertificateUrl(null);
+    setCertificateViewerOpen(false);
+    setCertificateLoading(false);
+    setSubmitExamError('');
   };
 
   // ===== BLOQUEO MÓVIL =====
@@ -507,17 +588,46 @@ export default function ExamenPageClient() {
           />
 
           <div className="flex justify-between items-center mt-8">
-            <button onClick={goToPrevious} disabled={currentQuestionIndex === 0} className="btn-secondary disabled:opacity-30">← Anterior</button>
+            <button onClick={goToPrevious} disabled={currentQuestionIndex === 0 || submittingExam} className="btn-secondary disabled:opacity-30">← Anterior</button>
             {currentQuestionIndex === questions.length - 1 ? (
-              <button onClick={() => finishExam(false)} className="bg-maritime-green text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors">Finalizar Examen</button>
+              <button
+                type="button"
+                onClick={() => void finishExam(false)}
+                disabled={submittingExam}
+                className="bg-maritime-green text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors disabled:opacity-50"
+              >
+                {submittingExam ? 'Enviando…' : 'Finalizar Examen'}
+              </button>
             ) : (
-              <button onClick={goToNext} className="btn-primary">Siguiente →</button>
+              <button type="button" onClick={goToNext} disabled={submittingExam} className="btn-primary disabled:opacity-50">Siguiente →</button>
             )}
           </div>
+
+          {submitExamError && (
+            <div className="mt-6 rounded-lg border-2 border-maritime-red bg-maritime-red/10 p-4 text-center space-y-3">
+              <p className="text-maritime-red font-semibold">{submitExamError}</p>
+              <button
+                type="button"
+                onClick={() => void finishExam(tiempoRestante <= 0 || tiempoExpirado)}
+                className="btn-secondary text-sm"
+              >
+                Reintentar envío del examen
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 text-center text-gray-600">
             <p>Preguntas respondidas: <strong>{answeredCount}</strong> de <strong>{questions.length}</strong></p>
           </div>
+
+          {submittingExam && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white rounded-xl p-8 shadow-xl flex flex-col items-center gap-4">
+                <Loader2 className="w-12 h-12 animate-spin text-navy" aria-hidden />
+                <p className="font-semibold text-navy">Guardando resultado en el servidor…</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -567,61 +677,41 @@ export default function ExamenPageClient() {
             </div>
 
             {results.passed ? (
-              <p className="text-xl text-gray-600 mb-8">Has demostrado tu conocimiento en navegación segura. Tu certificado está listo.</p>
+              <>
+                <p className="text-xl text-gray-600 mb-8">
+                  Tu certificado oficial está listo en formato PDF. Pulsa el botón para verlo.
+                </p>
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => void openOfficialCertificate()}
+                    className="btn-primary text-lg px-10 py-4"
+                  >
+                    Ver Certificado
+                  </button>
+                </div>
+              </>
             ) : (
-              <p className="text-xl text-gray-600 mb-8">Necesitas al menos 80% para aprobar. Revisa las preguntas que fallaste y vuelve a intentar.</p>
+              <>
+                <p className="text-xl text-gray-600 mb-8">Necesitas al menos 80% para aprobar. Revisa las preguntas que fallaste y vuelve a intentar.</p>
+                <div className="flex justify-center">
+                  <button type="button" onClick={restartExam} className="btn-secondary">
+                    <RotateCcw className="w-5 h-5 inline mr-2" />
+                    Tomar el Examen de Nuevo
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {results.passed && (
-                <button onClick={() => window.print()} className="btn-primary">
-                  <Download className="w-5 h-5 inline mr-2" /> Descargar Certificado
-                </button>
-              )}
-              <button onClick={restartExam} className="btn-secondary">
-                <RotateCcw className="w-5 h-5 inline mr-2" />
-                {results.passed ? 'Intentar Otro Examen' : 'Tomar el Examen de Nuevo'}
-              </button>
-            </div>
           </div>
 
-          {/* Certificado (solo si aprobó) */}
-          {results.passed && (
-            <div className="card mb-8 print:shadow-none">
-              <div className="border-8 border-navy rounded-lg p-12 bg-white">
-                <div className="text-center mb-8">
-                  <div className="w-24 h-24 bg-navy rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Award className="w-16 h-16 text-maritime-gold" />
-                  </div>
-                  <h2 className="text-4xl font-bold text-navy mb-2">Certificado de Navegación</h2>
-                  <p className="text-xl text-gray-600">Ley 430 de Puerto Rico</p>
-                </div>
-                <div className="border-t-2 border-maritime-gold mb-8" />
-                <div className="text-center space-y-6">
-                  <p className="text-lg text-gray-700">Se certifica que</p>
-                  <p className="text-4xl font-bold text-navy">{studentName}</p>
-                  <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed">
-                    ha completado satisfactoriamente el Curso de Navegación Segura y ha aprobado
-                    el examen oficial con una calificación de <strong>{results.percentage}%</strong>,
-                    cumpliendo con los requisitos establecidos por el Departamento de Recursos
-                    Naturales y Ambientales de Puerto Rico.
-                  </p>
-                  <div className="pt-8">
-                    <p className="text-gray-600">Fecha de Certificación</p>
-                    <p className="font-bold text-navy">
-                      {new Date().toLocaleDateString('es-PR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="border-t-2 border-maritime-gold mt-8 pt-8" />
-                <div className="text-center">
-                  <p className="font-bold text-navy text-lg">Americas Boating Club</p>
-                  <p className="text-gray-600">Boqueron Power Squadron</p>
-                  <p className="text-sm text-gray-500 mt-2">Certificado ID: {Date.now().toString(36).toUpperCase()}</p>
-                </div>
-              </div>
-            </div>
-          )}
+          <CertificateViewerModal
+            open={certificateViewerOpen}
+            pdfUrl={certificateUrl}
+            loading={certificateLoading}
+            onDownload={handleCertificateDownload}
+            onPrint={handleCertificatePrint}
+            onHome={handleCertificateHome}
+          />
 
           {/* Revisión de preguntas falladas (SIN mostrar la respuesta correcta) */}
           {!results.passed && wrongQuestions.length > 0 && (
