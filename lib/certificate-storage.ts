@@ -122,3 +122,28 @@ export async function getOrCreateCertificateSignedUrl(opts: {
 
   return { signedUrl, storagePath };
 }
+
+export async function getOrCreateCertificatePdfBytes(opts: {
+  attemptId: string;
+  /** Si se pasa, debe coincidir con exam_attempts.student_email */
+  verifyStudentEmail?: string;
+}): Promise<{ pdfBytes: Uint8Array; storagePath: string } | { error: string; status: number }> {
+  const result = await getOrCreateCertificateSignedUrl(opts);
+  if ('error' in result) {
+    return result;
+  }
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .download(result.storagePath);
+
+  if (error || !data) {
+    return { error: error?.message || 'No se pudo descargar el certificado.', status: 500 };
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  return {
+    pdfBytes: new Uint8Array(arrayBuffer),
+    storagePath: result.storagePath,
+  };
+}

@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-server';
+import { sendWelcomeEmailForRegistration } from '@/lib/registration-email-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
       console.error('confirm-session: error al actualizar matrícula', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await sendWelcomeEmailForRegistration(registrationId);
 
     return NextResponse.json({ success: true, registrationId });
   } catch (err: any) {

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { validateOfficialExamAccess } from '@/lib/exam-official-access';
+import { sendCertificateEmailForAttempt } from '@/lib/certificate-email-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -143,6 +144,14 @@ export async function POST(request: NextRequest) {
       );
       if (ansErr) {
         return NextResponse.json({ error: ansErr.message || 'No se pudieron guardar las respuestas.' }, { status: 500 });
+      }
+    }
+
+    if (passed) {
+      try {
+        await sendCertificateEmailForAttempt(attemptId);
+      } catch (emailError) {
+        console.error('No se pudo enviar el email de certificado:', emailError);
       }
     }
 

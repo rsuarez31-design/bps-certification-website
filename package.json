@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.39.0",
     "canvas-confetti": "^1.9.2",
     "framer-motion": "^12.35.2",
+    "googleapis": "^171.4.0",
     "lucide-react": "^0.344.0",
     "next": "^14.2.0",
     "pdf-lib": "^1.17.1",

@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { eliminarMatriculaSiPendiente } from '@/lib/eliminar-matricula-pendiente';
+import { sendWelcomeEmailForRegistration } from '@/lib/registration-email-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
           console.error('Error al actualizar matrícula:', error);
         } else {
           console.log(`Matrícula ${registrationId} marcada como PAGADA`);
+          await sendWelcomeEmailForRegistration(registrationId);
         }
       }
     }

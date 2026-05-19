@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { hasValidAdminSession } from '@/lib/admin-session';
+import { sendWelcomeEmailForRegistration } from '@/lib/registration-email-events';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,6 +188,8 @@ export async function POST(request: NextRequest) {
     if (error || !data) {
       return NextResponse.json({ error: error?.message || 'No se pudo crear la matrícula manual.' }, { status: 500 });
     }
+
+    await sendWelcomeEmailForRegistration(data.id as string);
 
     return NextResponse.json({ success: true, registration: { ...data, id_document_url: null } });
   } catch (err: any) {
