@@ -89,6 +89,8 @@ export default function ExamenPageClient() {
   const [certificateLoading, setCertificateLoading] = useState(false);
   const [submittingExam, setSubmittingExam] = useState(false);
   const [submitExamError, setSubmitExamError] = useState('');
+  const [documentosBpsLoading, setDocumentosBpsLoading] = useState(false);
+  const [documentosBpsError, setDocumentosBpsError] = useState<string | null>(null);
 
   // Cargar confetti
   useEffect(() => {
@@ -378,6 +380,36 @@ export default function ExamenPageClient() {
       setCertificateViewerOpen(false);
     } finally {
       setCertificateLoading(false);
+    }
+  };
+
+  const openDocumentosBps = async () => {
+    if (!attemptId) {
+      setDocumentosBpsError('No hay intento registrado para acceder a los documentos.');
+      return;
+    }
+    setDocumentosBpsLoading(true);
+    setDocumentosBpsError(null);
+    try {
+      const res = await fetch('/api/exam/documentos-bps/url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attemptId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || typeof data.signedUrl !== 'string') {
+        setDocumentosBpsError(
+          typeof data.error === 'string'
+            ? data.error
+            : 'No se pudo obtener el enlace de los documentos.',
+        );
+        return;
+      }
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      setDocumentosBpsError('Error de conexión al obtener los documentos.');
+    } finally {
+      setDocumentosBpsLoading(false);
     }
   };
 
@@ -689,6 +721,36 @@ export default function ExamenPageClient() {
                   >
                     Ver Certificado
                   </button>
+                </div>
+
+                <div className="mt-10 border-t border-gray-200 pt-8 text-left max-w-2xl mx-auto">
+                  <h3 className="text-xl font-bold text-navy mb-3 text-center">
+                    Documentos importantes
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    En el archivo adjunto encontrarás:
+                  </p>
+                  <ul className="list-disc list-outside pl-6 space-y-1 text-gray-700 mb-6">
+                    <li>Solicitud de licencia de navegación</li>
+                    <li>Instrucciones para solicitar la licencia</li>
+                    <li>Resumen de la Ley 430</li>
+                    <li>Reglamento 6949 de la Ley 430</li>
+                  </ul>
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => void openDocumentosBps()}
+                      disabled={documentosBpsLoading}
+                      className="btn-secondary text-lg px-10 py-4 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {documentosBpsLoading ? 'Generando enlace...' : 'Descargar Documentos'}
+                    </button>
+                  </div>
+                  {documentosBpsError && (
+                    <p className="text-maritime-red text-sm mt-3 text-center">
+                      {documentosBpsError}
+                    </p>
+                  )}
                 </div>
               </>
             ) : (
