@@ -56,7 +56,7 @@ export default async function HomePage() {
 
           <AnimatedSection delay={0.1}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
-              Americas Boating Club
+              America&apos;s Boating Club
               <span className="block text-gradient mt-2">
                 Boquerón Power Squadron
               </span>
@@ -67,8 +67,9 @@ export default async function HomePage() {
             <p className="text-xl sm:text-2xl mb-4 text-white/85 max-w-3xl mx-auto leading-relaxed">
               Navega con confianza y seguridad.
             </p>
-            <p className="text-xl sm:text-2xl mb-10 text-white/85 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl sm:text-2xl mb-10 text-white/85 max-w-4xl mx-auto leading-relaxed">
               Obtén tu licencia de navegación para botes, jet skis y embarcaciones.
+              <br />
               Certificación reconocida por el DRNA de Puerto Rico.
             </p>
           </AnimatedSection>
@@ -173,7 +174,7 @@ export default async function HomePage() {
                 <div>
                   <h3 className="text-lg font-bold mb-2 text-navy">Certificación Oficial</h3>
                   <p className="text-gray-600">
-                    Al aprobar este curso recibes tu certificado digital oficial reconocido por el DRNA de Puerto Rico.
+                    Al aprobar este curso recibes tu certificado digital reconocido por el DRNA de Puerto Rico.
                   </p>
                 </div>
               </div>
@@ -187,7 +188,7 @@ export default async function HomePage() {
                 <div>
                   <h3 className="text-lg font-bold mb-2 text-navy">Libro De Texto</h3>
                   <p className="text-gray-600">
-                    En el libro encontrarás toda la información necesaria para aprobar el curso y referencias para uso futuro.
+                    En el libro encontrarás toda la información necesaria para completar el curso exitosamente.
                   </p>
                 </div>
               </div>
@@ -215,7 +216,7 @@ export default async function HomePage() {
                 <div>
                   <h3 className="text-lg font-bold mb-2 text-navy">Licencia Oficial del DRNA</h3>
                   <p className="text-gray-600">
-                    Luego de aprobar el curso, recibirás la información necesaria para gestionar tu licencia en DRNA.
+                    Luego de aprobar el curso recibirás la información necesaria para gestionar tu licencia.
                   </p>
                 </div>
               </div>

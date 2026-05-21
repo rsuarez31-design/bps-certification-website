@@ -6,7 +6,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Examen de Práctica | Americas Boating Club - Boqueron Power Squadron',
+  title: "Examen de Práctica | America's Boating Club - Boqueron Power Squadron",
   description: 'Practica para tu certificación de navegación con 10 preguntas del examen oficial. Gratis y sin registro.',
 };
 

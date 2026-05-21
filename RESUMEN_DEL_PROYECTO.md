@@ -1,6 +1,6 @@
 # RESUMEN COMPLETO DEL PROYECTO
 
-## Americas Boating Club - Boqueron Power Squadron
+## America's Boating Club - Boqueron Power Squadron
 
 ### Sistema de Certificacion de Navegacion Ley 430 PR
 
@@ -196,7 +196,7 @@ BPS/                              (raiz del proyecto)
   - Porcentaje obtenido
   - Fecha de certificacion
   - ID unico del certificado
-  - Logo de Americas Boating Club
+  - Logo de America's Boating Club
 - Boton "Descargar Certificado" (usa impresion del navegador)
 
 ---
@@ -421,5 +421,5 @@ npm run lint
 
 ---
 
-*Proyecto creado para Americas Boating Club - Boqueron Power Squadron*
+*Proyecto creado para America's Boating Club - Boqueron Power Squadron*
 *Enero 2026 - Version 2.0*

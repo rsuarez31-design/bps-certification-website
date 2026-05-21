@@ -34,10 +34,10 @@ const inter = Inter({
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Americas Boating Club - Boqueron Power Squadron | Certificación Ley 430 PR',
+  title: "America's Boating Club - Boqueron Power Squadron | Certificación Ley 430 PR",
   description: 'Sistema de certificación oficial de navegación según la Ley 430 de Puerto Rico. Curso completo, examen en línea y certificado digital.',
-  keywords: 'navegación, Puerto Rico, Ley 430, certificación náutica, Americas Boating Club, Boqueron, curso de navegación',
-  authors: [{ name: 'Americas Boating Club - Boqueron Power Squadron' }],
+  keywords: "navegación, Puerto Rico, Ley 430, certificación náutica, America's Boating Club, Boqueron, curso de navegación",
+  authors: [{ name: "America's Boating Club - Boqueron Power Squadron" }],
   openGraph: {
     title: 'Certificación Oficial de Navegación Ley 430 PR',
     description: 'Obtén tu certificación oficial de navegación en Puerto Rico',

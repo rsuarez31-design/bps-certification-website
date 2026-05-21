@@ -8,7 +8,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Matrícula Digital | Americas Boating Club - Boqueron Power Squadron',
+  title: "Matrícula Digital | America's Boating Club - Boqueron Power Squadron",
   description: 'Inscríbete en el curso de certificación de navegación bajo la Ley 430 de Puerto Rico. Pago seguro con Stripe.',
 };
 

@@ -224,6 +224,11 @@ function MatriculaContent() {
       }
     }
 
+    if (!formData.hairColor.trim()) newErrors.push('Color de cabello es obligatorio');
+    if (!formData.eyeColor.trim()) newErrors.push('Color de ojos es obligatorio');
+    if (formData.heightFeet === '') newErrors.push('Estatura (pies) es obligatoria');
+    if (formData.heightInches === '') newErrors.push('Estatura (pulgadas) es obligatoria');
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
       newErrors.push('El correo electrónico no tiene un formato válido (ej: nombre@correo.com)');
@@ -623,20 +628,64 @@ function MatriculaContent() {
             <p className="text-gray-600 mb-6">Requerida para certificación estatal</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="input-label">Color de Cabello</label>
-                <input type="text" name="hairColor" value={formData.hairColor} onChange={handleChange} placeholder="Negro" className="input-field" />
+                <label className="input-label">
+                  Color de Cabello <span className="text-maritime-red">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="hairColor"
+                  value={formData.hairColor}
+                  onChange={handleChange}
+                  placeholder="Negro"
+                  className="input-field"
+                  required
+                />
               </div>
               <div>
-                <label className="input-label">Color de Ojos</label>
-                <input type="text" name="eyeColor" value={formData.eyeColor} onChange={handleChange} placeholder="Marrón" className="input-field" />
+                <label className="input-label">
+                  Color de Ojos <span className="text-maritime-red">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="eyeColor"
+                  value={formData.eyeColor}
+                  onChange={handleChange}
+                  placeholder="Marrón"
+                  className="input-field"
+                  required
+                />
               </div>
               <div>
-                <label className="input-label">Estatura (Pies)</label>
-                <input type="number" name="heightFeet" value={formData.heightFeet} onChange={handleChange} placeholder="5" min="3" max="8" className="input-field" />
+                <label className="input-label">
+                  Estatura (Pies) <span className="text-maritime-red">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="heightFeet"
+                  value={formData.heightFeet}
+                  onChange={handleChange}
+                  placeholder="5"
+                  min="3"
+                  max="8"
+                  className="input-field"
+                  required
+                />
               </div>
               <div>
-                <label className="input-label">Estatura (Pulgadas)</label>
-                <input type="number" name="heightInches" value={formData.heightInches} onChange={handleChange} placeholder="10" min="0" max="11" className="input-field" />
+                <label className="input-label">
+                  Estatura (Pulgadas) <span className="text-maritime-red">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="heightInches"
+                  value={formData.heightInches}
+                  onChange={handleChange}
+                  placeholder="10"
+                  min="0"
+                  max="11"
+                  className="input-field"
+                  required
+                />
               </div>
             </div>
           </div>

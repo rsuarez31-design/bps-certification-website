@@ -17,8 +17,8 @@ import type { Metadata } from 'next';
 import { getSiteVisibilityFlags } from '@/lib/site-config-public';
 
 export const metadata: Metadata = {
-  title: 'Somos | Americas Boating Club - Boquerón Power Squadron',
-  description: 'Conoce la historia, misión y valores de Americas Boating Club - Boquerón Power Squadron. Más de 30 años promoviendo la navegación segura en Puerto Rico.',
+  title: "Somos | America's Boating Club - Boquerón Power Squadron",
+  description: "Conoce la historia, misión y valores de America's Boating Club - Boquerón Power Squadron. Más de 30 años promoviendo la navegación segura en Puerto Rico.",
 };
 
 export const dynamic = 'force-dynamic';
@@ -79,23 +79,23 @@ export default async function SomosPage() {
                 Nuestra Historia
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-                Americas Boating Club -<br />
+                America&apos;s Boating Club -<br />
                 <span className="text-gradient-ocean">Boquerón Power Squadron</span>
               </h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
-                  Somos parte de Americas Boating Club (anteriormente conocido como
+                  Somos parte de America&apos;s Boating Club (anteriormente conocido como
                   United States Power Squadrons), la organización de educación náutica
                   más grande de los Estados Unidos, con más de 50,000 miembros a nivel nacional.
                 </p>
                 <p>
                   Nuestra escuadrilla en Boquerón, Puerto Rico, se dedica a educar
-                  y certificar navegantes bajo la Ley 430 del Departamento de Recursos
+                  navegantes bajo la Ley 430 del Departamento de Recursos
                   Naturales y Ambientales (DRNA), asegurando que cada persona que
                   salga al mar lo haga con el conocimiento y la seguridad necesarios.
                 </p>
                 <p>
-                  Ofrecemos cursos de certificación para todo tipo de embarcaciones:
+                  Ofrecemos cursos para todo tipo de embarcaciones:
                   botes de motor, veleros, jet skis (motos acuáticas) y más. Nuestro
                   compromiso es que cada navegante en Puerto Rico esté preparado
                   para disfrutar del mar de manera responsable.
@@ -144,7 +144,7 @@ export default async function SomosPage() {
                 <h3 className="text-xl font-bold text-navy mb-3">Nuestra Misión</h3>
                 <p className="text-gray-600 leading-relaxed">
                   Promover la navegación segura y responsable en Puerto Rico a través
-                  de la educación, certificación y el compañerismo entre navegantes.
+                  de la educación y el compañerismo entre navegantes.
                   Buscamos que cada persona que salga al mar tenga el conocimiento
                   necesario para proteger su vida y la de los demás.
                 </p>
@@ -159,7 +159,7 @@ export default async function SomosPage() {
                 <h3 className="text-xl font-bold text-navy mb-3">Nuestra Visión</h3>
                 <p className="text-gray-600 leading-relaxed">
                   Ser la organización líder en educación náutica en Puerto Rico,
-                  reconocida por la excelencia en la formación de navegantes certificados
+                  reconocida por la excelencia en la formación de navegantes
                   y por nuestro compromiso con la conservación de los recursos marinos
                   del Caribe.
                 </p>

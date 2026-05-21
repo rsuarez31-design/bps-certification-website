@@ -6,8 +6,8 @@
  */
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Anchor, Mail, Waves } from 'lucide-react';
+import BpsLogo from '@/components/BpsLogo';
 
 export type FooterProps = {
   enrollmentEnabled?: boolean;
@@ -50,15 +50,7 @@ export default function Footer({
             {/* Columna 1: Sobre Nosotros */}
             <div className="lg:col-span-1">
               <div className="flex justify-center mb-5">
-                <div className="w-[150px] h-[150px] relative flex-shrink-0">
-                  <Image
-                    src="/images/bps-logo.png"
-                    alt="BPS Logo"
-                    fill
-                    className="object-contain rounded-full"
-                    sizes="150px"
-                  />
-                </div>
+                <BpsLogo variant="footer" />
               </div>
               <p className="text-white/70 leading-relaxed mb-5 text-center">
                 Dedicados a promover la navegación segura y responsable en las aguas
@@ -134,7 +126,7 @@ export default function Footer({
           <div className="container-custom py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-white/50 text-sm">
               <p>
-                &copy; {currentYear} Americas Boating Club - Boquerón Power Squadron.
+                &copy; {currentYear} America&apos;s Boating Club - Boquerón Power Squadron.
                 Todos los derechos reservados.
               </p>
               <div className="flex items-center gap-2">

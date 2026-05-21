@@ -6,7 +6,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Examen Oficial de Navegación | Americas Boating Club - Boqueron Power Squadron',
+  title: "Examen Oficial de Navegación | America's Boating Club - Boqueron Power Squadron",
   description: 'Examen oficial de certificación de navegación bajo la Ley 430 de Puerto Rico. 75 preguntas, 80% para aprobar.',
 };
 

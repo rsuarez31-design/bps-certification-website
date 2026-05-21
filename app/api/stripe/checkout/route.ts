@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           currency: 'usd',
           product_data: {
             name: 'Curso de Certificación de Navegación - Ley 430 PR',
-            description: 'Americas Boating Club - Boqueron Power Squadron',
+            description: "America's Boating Club - Boqueron Power Squadron",
           },
           unit_amount: 8000,
         },

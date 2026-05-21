@@ -1,6 +1,6 @@
 # Findings para Resolver
 
-**Proyecto:** BPS — Americas Boating Club / Boquerón Power Squadron  
+**Proyecto:** BPS — America's Boating Club / Boquerón Power Squadron  
 **Fecha del review:** 20 de abril de 2026  
 **Tipo de revisión:** Auditoría de seguridad y calidad (10 agentes paralelos, solo lectura)  
 **Alcance:** `/Users/ramonsuarez/Desktop/BPS/bps-website/` (Next.js 14 App Router), esquema Supabase, workflows de CI/CD, documentación del repo.

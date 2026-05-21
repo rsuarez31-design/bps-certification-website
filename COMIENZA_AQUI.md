@@ -1,6 +1,6 @@
 # BIENVENIDO A TU SITIO WEB
 
-## Americas Boating Club - Boqueron Power Squadron
+## America's Boating Club - Boqueron Power Squadron
 
 ---
 
@@ -318,7 +318,7 @@ npm install
 ## INFORMACION DEL PROYECTO
 
 **Proyecto:** Sistema de Certificacion de Navegacion
-**Organizacion:** Americas Boating Club - Boqueron Power Squadron
+**Organizacion:** America's Boating Club - Boqueron Power Squadron
 **Ley:** Ley 430 de Puerto Rico
 **Version:** 2.0.0
 **Fecha:** Enero 2026
@@ -353,5 +353,5 @@ Luego abre `http://localhost:3000` en tu navegador.
 
 ---
 
-*Proyecto creado para Americas Boating Club - Boqueron Power Squadron*
+*Proyecto creado para America's Boating Club - Boqueron Power Squadron*
 *Enero 2026*

@@ -9,8 +9,8 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import BpsLogo from '@/components/BpsLogo';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,16 +53,11 @@ export default function Navbar({
       <div className="container-custom">
         <div className="flex items-center justify-between h-20">
           {/* Logo y nombre */}
-          <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
-            <div className="w-[150px] h-[150px] relative flex-shrink-0 -mt-4 -mb-12">
-              <Image
-                src="/images/bps-logo.png"
-                alt="BPS Logo"
-                fill
-                className="object-contain rounded-full"
-                sizes="150px"
-              />
-            </div>
+          <Link
+            href="/"
+            className="flex h-20 items-center hover:opacity-90 transition-opacity"
+          >
+            <BpsLogo variant="navbar" />
           </Link>
 
           {/* Links de navegación (pantallas grandes) */}

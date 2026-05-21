@@ -6,7 +6,7 @@
 
 ## INSTRUCCIONES GLOBALES
 
-Actúa como un Senior Full-Stack Developer. Vas a implementar una serie de actualizaciones al sitio web de Americas Boating Club - Boquerón Power Squadron (BPS). El proyecto usa Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase y Stripe.
+Actúa como un Senior Full-Stack Developer. Vas a implementar una serie de actualizaciones al sitio web de America's Boating Club - Boquerón Power Squadron (BPS). El proyecto usa Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase y Stripe.
 
 **Reglas obligatorias:**
 

@@ -249,7 +249,7 @@ Una vez que Node.js esté instalado:
 
 ## 📞 INFORMACIÓN DEL PROYECTO
 
-**Americas Boating Club - Boqueron Power Squadron**
+**America's Boating Club - Boqueron Power Squadron**
 Sistema de Certificación de Navegación - Ley 430 PR
 
 Ubicación del proyecto:

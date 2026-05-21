@@ -10,7 +10,7 @@ import { Shield } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidad | Americas Boating Club - Boqueron Power Squadron',
+  title: "Política de Privacidad | America's Boating Club - Boqueron Power Squadron",
   description: 'Política de privacidad del sistema de certificación de navegación Ley 430 PR.',
 };
 
@@ -36,10 +36,10 @@ export default function PrivacidadPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-navy mb-4">1. Información que Recopilamos</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Americas Boating Club - Boqueron Power Squadron recopila la siguiente información
+              America&apos;s Boating Club - Boqueron Power Squadron recopila la siguiente información
               cuando te inscribes en nuestro curso de certificación de navegación:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <ul className="list-disc list-outside space-y-2 pl-6 text-gray-700">
               <li>Nombre completo, dirección, teléfono y correo electrónico</li>
               <li>Fecha de nacimiento y género</li>
               <li>Características físicas (requeridas para el certificado de navegación)</li>
@@ -54,7 +54,7 @@ export default function PrivacidadPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               Utilizamos la información recopilada para:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <ul className="list-disc list-outside space-y-2 pl-6 text-gray-700">
               <li>Procesar tu inscripción y matrícula en el curso</li>
               <li>Administrar los exámenes de certificación</li>
               <li>Emitir certificados digitales de navegación</li>
@@ -95,9 +95,12 @@ export default function PrivacidadPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               No vendemos ni compartimos tu información personal con terceros, excepto:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
-              <li>Con el Departamento de Recursos Naturales y Ambientales (DRNA), según lo
-                requiera la Ley 430 para el proceso de certificación</li>
+            <ul className="list-disc list-outside space-y-2 pl-6 text-gray-700">
+              <li>
+                Con el Departamento de Recursos Naturales y Ambientales (DRNA), NASBLA y
+                America&apos;s Boating Club; según lo requiera la Ley 430 para el proceso de
+                certificación.
+              </li>
               <li>Con proveedores de servicios de confianza necesarios para operar el sitio,
                 tales como procesamiento de pagos y almacenamiento seguro de datos</li>
               <li>Cuando sea requerido por ley o proceso legal</li>
@@ -109,7 +112,7 @@ export default function PrivacidadPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               Tienes derecho a:
             </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <ul className="list-disc list-outside space-y-2 pl-6 text-gray-700">
               <li>Solicitar acceso a la información personal que tenemos sobre ti</li>
               <li>Solicitar corrección de datos incorrectos</li>
               <li>Solicitar la eliminación de tus datos personales</li>

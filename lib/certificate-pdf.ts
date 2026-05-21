@@ -1,5 +1,5 @@
 /**
- * Genera el PDF del certificado oficial (Americas Boating Course ABC template).
+ * Genera el PDF del certificado oficial (America's Boating Course ABC template).
  * Plantilla: lib/assets/certificate-template.pdf (copia del PDF original).
  * La plantilla es un PDF portrait con el certificado dibujado en la parte
  * superior. Embebemos solo esa área como fondo en una página landscape limpia

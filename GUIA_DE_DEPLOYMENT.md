@@ -299,5 +299,5 @@ git push -u origin main
 
 ---
 
-*Guia creada para Americas Boating Club - Boqueron Power Squadron*
+*Guia creada para America's Boating Club - Boqueron Power Squadron*
 *Enero 2026*

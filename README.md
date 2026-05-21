@@ -1,4 +1,4 @@
-# Americas Boating Club - Boqueron Power Squadron
+# America's Boating Club - Boqueron Power Squadron
 
 ## Sistema de Certificacion de Navegacion - Ley 430 PR
 
@@ -226,9 +226,9 @@ npm run lint       # Verificar calidad de codigo
 
 ## Licencia
 
-(c) 2026 Americas Boating Club - Boqueron Power Squadron. Todos los derechos reservados.
+(c) 2026 America's Boating Club - Boqueron Power Squadron. Todos los derechos reservados.
 
 ---
 
-*Proyecto creado para Americas Boating Club - Boqueron Power Squadron*
+*Proyecto creado para America's Boating Club - Boqueron Power Squadron*
 *Enero 2026 - Version 2.0*

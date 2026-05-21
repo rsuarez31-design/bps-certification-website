@@ -474,7 +474,7 @@ export default function ExamenPageClient() {
             </div>
             <h1 className="text-4xl font-bold text-navy mb-4">Examen Oficial de Certificación</h1>
             <p className="text-xl text-gray-600 mb-2">Ley 430 de Puerto Rico</p>
-            <p className="text-gray-500 mb-8">Americas Boating Club - Boqueron Power Squadron</p>
+            <p className="text-gray-500 mb-8">America&apos;s Boating Club - Boqueron Power Squadron</p>
 
             <div className="bg-ice rounded-lg p-6 mb-8 text-left">
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">

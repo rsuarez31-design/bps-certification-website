@@ -92,7 +92,7 @@ Un **repositorio** (o "repo") es como una carpeta en GitHub donde vive tu proyec
 2. En la esquina superior derecha, haz clic en el **"+"** y selecciona **"New repository"**
 3. Completa los campos:
   - **Repository name**: `bps-certification-website` (o el nombre que prefieras)
-  - **Description**: `Sitio web de Americas Boating Club - Boquerón Power Squadron`
+  - **Description**: `Sitio web de America's Boating Club - Boquerón Power Squadron`
   - **Visibilidad**: Elige **Private** (privado) si no quieres que sea público
   - **NO** marques ninguna de las casillas de abajo (no inicialices con README ni .gitignore, ya los tenemos)
 4. Haz clic en **"Create repository"**
