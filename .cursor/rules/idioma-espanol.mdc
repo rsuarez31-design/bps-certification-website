@@ -1,0 +1,25 @@
+---
+description: Idioma español obligatorio en todo el proyecto BPS — respuestas, commits, PRs y documentación para el usuario.
+alwaysApply: true
+---
+
+# Idioma: español
+
+En este proyecto, **toda la comunicación con el usuario debe ser en español**.
+
+## Alcance
+
+- Respuestas y explicaciones en el chat
+- Mensajes de commit y descripciones de pull request
+- Resúmenes de cambios, instrucciones y recomendaciones
+- Textos orientados al usuario (no código fuente existente en inglés)
+
+## Excepciones
+
+- Identificadores de código, nombres de variables, rutas y APIs pueden permanecer en inglés si así están en el repositorio
+- Términos técnicos universales (p. ej. *commit*, *push*, *deploy*) pueden usarse cuando sea natural, pero la frase completa debe estar en español
+
+## Ejemplo
+
+- ✅ "He actualizado la tabla de matrículas y subido los cambios a `main`."
+- ❌ "I've updated the registrations table and pushed to main."
