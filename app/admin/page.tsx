@@ -16,6 +16,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { parseVisibilityBool } from '@/lib/site-config-visibility-parse';
+import { getExamWindowStatus, parseDateTimeLocalAsPuertoRico } from '@/lib/site-config-exam-window';
+import { validateRequiredRegistrationFields } from '@/lib/registration-form-validation';
 import CertificateViewerModal from '@/components/CertificateViewerModal';
 import DrnaReportModal from '@/components/DrnaReportModal';
 import {
@@ -244,7 +246,8 @@ function registrationDraftMatchesSaved(draft: RegistrationEditableFields, reg: R
 type SavedConfigSnapshot = {
   course_month: string;
   course_year: string;
-  official_exam_enabled: boolean;
+  official_exam_start_local: string;
+  official_exam_end_local: string;
   enrollment_enabled: boolean;
 };
 
@@ -310,8 +313,9 @@ export default function AdminPage() {
   // Configuración del curso
   const [configMonth, setConfigMonth] = useState('Enero');
   const [configYear, setConfigYear] = useState('2026');
-  /** Visibilidad pública de /examen y /matricula */
-  const [officialExamEnabled, setOfficialExamEnabled] = useState(true);
+  /** Ventana pública de /examen (datetime-local, hora PR) */
+  const [officialExamStart, setOfficialExamStart] = useState('');
+  const [officialExamEnd, setOfficialExamEnd] = useState('');
   const [enrollmentEnabled, setEnrollmentEnabled] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
@@ -319,7 +323,8 @@ export default function AdminPage() {
   const [savedConfigSnapshot, setSavedConfigSnapshot] = useState<SavedConfigSnapshot>({
     course_month: 'Enero',
     course_year: '2026',
-    official_exam_enabled: true,
+    official_exam_start_local: '',
+    official_exam_end_local: '',
     enrollment_enabled: true,
   });
   /** Diálogo: salir sin guardar / guardar (pestañas Matrículas y Configuración, logout, cerrar modales) */
@@ -329,10 +334,26 @@ export default function AdminPage() {
     () =>
       configMonth !== savedConfigSnapshot.course_month ||
       String(configYear) !== String(savedConfigSnapshot.course_year) ||
-      officialExamEnabled !== savedConfigSnapshot.official_exam_enabled ||
+      officialExamStart !== savedConfigSnapshot.official_exam_start_local ||
+      officialExamEnd !== savedConfigSnapshot.official_exam_end_local ||
       enrollmentEnabled !== savedConfigSnapshot.enrollment_enabled,
-    [configMonth, configYear, officialExamEnabled, enrollmentEnabled, savedConfigSnapshot],
+    [
+      configMonth,
+      configYear,
+      officialExamStart,
+      officialExamEnd,
+      enrollmentEnabled,
+      savedConfigSnapshot,
+    ],
   );
+
+  const examWindowStatus = useMemo(() => {
+    if (!officialExamStart.trim() || !officialExamEnd.trim()) return 'unconfigured' as const;
+    const startAt = parseDateTimeLocalAsPuertoRico(officialExamStart);
+    const endAt = parseDateTimeLocalAsPuertoRico(officialExamEnd);
+    if (!startAt || !endAt) return 'unconfigured' as const;
+    return getExamWindowStatus(startAt.toISOString(), endAt.toISOString());
+  }, [officialExamStart, officialExamEnd]);
 
   const isManualDraftDirty = () =>
     JSON.stringify(manualDraft) !== JSON.stringify(EMPTY_MANUAL_REGISTRATION) || manualIdFile !== null;
@@ -600,16 +621,21 @@ export default function AdminPage() {
           ? data.course_month
           : 'Enero';
       const year = data.course_year != null ? String(data.course_year) : '2026';
-      const examOn = parseVisibilityBool(data.official_exam_enabled, true);
+      const examStartLocal =
+        typeof data.official_exam_start_local === 'string' ? data.official_exam_start_local : '';
+      const examEndLocal =
+        typeof data.official_exam_end_local === 'string' ? data.official_exam_end_local : '';
       const enrollOn = parseVisibilityBool(data.enrollment_enabled, true);
       setConfigMonth(month);
       setConfigYear(year);
-      setOfficialExamEnabled(examOn);
+      setOfficialExamStart(examStartLocal);
+      setOfficialExamEnd(examEndLocal);
       setEnrollmentEnabled(enrollOn);
       setSavedConfigSnapshot({
         course_month: month,
         course_year: year,
-        official_exam_enabled: examOn,
+        official_exam_start_local: examStartLocal,
+        official_exam_end_local: examEndLocal,
         enrollment_enabled: enrollOn,
       });
       markFresh('config');
@@ -629,16 +655,17 @@ export default function AdminPage() {
         body: JSON.stringify({
           course_month: configMonth,
           course_year: configYear,
-          official_exam_enabled: officialExamEnabled,
+          official_exam_start_at: officialExamStart.trim() || null,
+          official_exam_end_at: officialExamEnd.trim() || null,
           enrollment_enabled: enrollmentEnabled,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        const persistedExam =
-          typeof data.official_exam_enabled === 'boolean'
-            ? data.official_exam_enabled
-            : officialExamEnabled;
+        const examStartLocal =
+          typeof data.official_exam_start_local === 'string' ? data.official_exam_start_local : '';
+        const examEndLocal =
+          typeof data.official_exam_end_local === 'string' ? data.official_exam_end_local : '';
         const persistedEnroll =
           typeof data.enrollment_enabled === 'boolean'
             ? data.enrollment_enabled
@@ -649,14 +676,16 @@ export default function AdminPage() {
             : configMonth;
         const persistedYear =
           data.course_year != null ? String(data.course_year) : String(configYear);
-        setOfficialExamEnabled(persistedExam);
+        setOfficialExamStart(examStartLocal);
+        setOfficialExamEnd(examEndLocal);
         setEnrollmentEnabled(persistedEnroll);
         setConfigMonth(persistedMonth);
         setConfigYear(persistedYear);
         setSavedConfigSnapshot({
           course_month: persistedMonth,
           course_year: persistedYear,
-          official_exam_enabled: persistedExam,
+          official_exam_start_local: examStartLocal,
+          official_exam_end_local: examEndLocal,
           enrollment_enabled: persistedEnroll,
         });
         setConfigMessage('Configuración guardada exitosamente.');
@@ -741,39 +770,21 @@ export default function AdminPage() {
     void loadExams({ silent: true });
   };
 
-  const validateRegistrationDraft = (draft: RegistrationEditableFields): string[] => {
-    const newErrors: string[] = [];
-    if (!draft.full_name.trim()) newErrors.push('Nombre es obligatorio');
-    if (!draft.last_name.trim()) newErrors.push('Apellido es obligatorio');
-    if (!draft.email.trim()) newErrors.push('Correo electrónico es obligatorio');
-    if (!draft.phone.trim()) newErrors.push('Teléfono es obligatorio');
-    if (!draft.birth_date) newErrors.push('Fecha de nacimiento es obligatoria');
-    if (!draft.gender) newErrors.push('Sexo es obligatorio');
-
-    if (draft.is_minor && !draft.parent_guardian_signature.trim()) {
-      newErrors.push('Firma de padre/madre/guardián es obligatoria para menores');
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (draft.email && !emailRegex.test(draft.email)) {
-      newErrors.push('El correo electrónico no tiene un formato válido');
-    }
-
-    const phoneDigits = draft.phone.replace(/\D/g, '');
-    if (draft.phone && phoneDigits.length < 7) {
-      newErrors.push('El teléfono debe tener al menos 7 dígitos');
-    }
-
-    if (draft.birth_date) {
-      const birthYear = new Date(draft.birth_date).getFullYear();
-      const currentYear = new Date().getFullYear();
-      if (birthYear < 1920 || birthYear > currentYear) {
-        newErrors.push('La fecha de nacimiento no parece correcta');
-      }
-    }
-
-    return newErrors;
-  };
+  const validateRegistrationDraft = (draft: RegistrationEditableFields): string[] =>
+    validateRequiredRegistrationFields({
+      full_name: draft.full_name,
+      last_name: draft.last_name,
+      email: draft.email,
+      phone: draft.phone,
+      birth_date: draft.birth_date,
+      gender: draft.gender,
+      is_minor: draft.is_minor,
+      parent_guardian_signature: draft.parent_guardian_signature,
+      hair_color: draft.hair_color,
+      eye_color: draft.eye_color,
+      height_feet: draft.height_feet,
+      height_inches: draft.height_inches,
+    });
 
   const saveRegistrationEdits = async (): Promise<boolean> => {
     if (!selectedRegistration || !registrationDraft) return false;
@@ -1109,7 +1120,8 @@ export default function AdminPage() {
     if (configDirty) {
       setConfigMonth(savedConfigSnapshot.course_month);
       setConfigYear(savedConfigSnapshot.course_year);
-      setOfficialExamEnabled(savedConfigSnapshot.official_exam_enabled);
+      setOfficialExamStart(savedConfigSnapshot.official_exam_start_local);
+      setOfficialExamEnd(savedConfigSnapshot.official_exam_end_local);
       setEnrollmentEnabled(savedConfigSnapshot.enrollment_enabled);
     }
     setManualModalOpen(false);
@@ -1987,7 +1999,7 @@ export default function AdminPage() {
                 <input className="input-field" placeholder="Título del curso" value={manualDraft.course_name} onChange={(e) => setManualDraft(prev => ({ ...prev, course_name: e.target.value }))} />
                 <input type="date" className="input-field" placeholder="Fecha del curso" value={manualDraft.course_date} onChange={(e) => setManualDraft(prev => ({ ...prev, course_date: e.target.value }))} />
                 <input className="input-field" placeholder="Nombre *" value={manualDraft.full_name} onChange={(e) => setManualDraft(prev => ({ ...prev, full_name: e.target.value }))} />
-                <input className="input-field" placeholder="Apellido" value={manualDraft.last_name} onChange={(e) => setManualDraft(prev => ({ ...prev, last_name: e.target.value }))} />
+                <input className="input-field" placeholder="Apellido *" value={manualDraft.last_name} onChange={(e) => setManualDraft(prev => ({ ...prev, last_name: e.target.value }))} />
                 <input className="input-field" placeholder="Dirección postal" value={manualDraft.postal_address} onChange={(e) => setManualDraft(prev => ({ ...prev, postal_address: e.target.value }))} />
                 <input className="input-field" placeholder="Dirección física" value={manualDraft.physical_address} onChange={(e) => setManualDraft(prev => ({ ...prev, physical_address: e.target.value }))} />
                 <input className="input-field" placeholder="Ciudad" value={manualDraft.city} onChange={(e) => setManualDraft(prev => ({ ...prev, city: e.target.value }))} />
@@ -2002,10 +2014,10 @@ export default function AdminPage() {
                   <option value="F">Femenino (F)</option>
                 </select>
                 <input type="date" className="input-field" placeholder="Fecha nacimiento *" value={manualDraft.birth_date} onChange={(e) => setManualDraft(prev => ({ ...prev, birth_date: e.target.value }))} />
-                <input className="input-field" placeholder="Color de cabello" value={manualDraft.hair_color} onChange={(e) => setManualDraft(prev => ({ ...prev, hair_color: e.target.value }))} />
-                <input className="input-field" placeholder="Color de ojos" value={manualDraft.eye_color} onChange={(e) => setManualDraft(prev => ({ ...prev, eye_color: e.target.value }))} />
-                <input type="number" min="3" max="8" className="input-field" placeholder="Estatura pies" value={manualDraft.height_feet} onChange={(e) => setManualDraft(prev => ({ ...prev, height_feet: e.target.value }))} />
-                <input type="number" min="0" max="11" className="input-field" placeholder="Estatura pulgadas" value={manualDraft.height_inches} onChange={(e) => setManualDraft(prev => ({ ...prev, height_inches: e.target.value }))} />
+                <input className="input-field" placeholder="Color de cabello *" value={manualDraft.hair_color} onChange={(e) => setManualDraft(prev => ({ ...prev, hair_color: e.target.value }))} />
+                <input className="input-field" placeholder="Color de ojos *" value={manualDraft.eye_color} onChange={(e) => setManualDraft(prev => ({ ...prev, eye_color: e.target.value }))} />
+                <input type="number" min="3" max="8" className="input-field" placeholder="Estatura pies *" value={manualDraft.height_feet} onChange={(e) => setManualDraft(prev => ({ ...prev, height_feet: e.target.value }))} />
+                <input type="number" min="0" max="11" className="input-field" placeholder="Estatura pulgadas *" value={manualDraft.height_inches} onChange={(e) => setManualDraft(prev => ({ ...prev, height_inches: e.target.value }))} />
                 <select className="input-field" value={manualDraft.boat_type} onChange={(e) => setManualDraft(prev => ({ ...prev, boat_type: e.target.value }))}>
                   {BOAT_TYPE_OPTIONS.map(opt => <option key={`manual-boat-type-${opt.value || 'empty'}`} value={opt.value}>{opt.label}</option>)}
                 </select>
@@ -2042,7 +2054,7 @@ export default function AdminPage() {
 
               {manualDraft.is_minor && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                  <input className="input-field" placeholder="Firma padre/tutor" value={manualDraft.parent_guardian_signature} onChange={(e) => setManualDraft(prev => ({ ...prev, parent_guardian_signature: e.target.value }))} />
+                  <input className="input-field" placeholder="Firma padre/tutor *" value={manualDraft.parent_guardian_signature} onChange={(e) => setManualDraft(prev => ({ ...prev, parent_guardian_signature: e.target.value }))} />
                   <input type="date" className="input-field" placeholder="Fecha firma padre/tutor" value={manualDraft.parent_guardian_signed_at} onChange={(e) => setManualDraft(prev => ({ ...prev, parent_guardian_signed_at: e.target.value }))} />
                 </div>
               )}
@@ -2399,20 +2411,41 @@ export default function AdminPage() {
               <div className="card flex-1 w-full max-w-lg">
                 <h2 className="text-xl font-bold text-navy mb-4">Disponibilidad de páginas públicas</h2>
                 <p className="text-gray-600 text-sm mb-6">
-                  Cuando una opción está <strong>Desactivada</strong>, la ruta ya no estará disponible para visitantes
-                  (redirige al inicio) y se ocultan enlaces correspondientes en el sitio.
+                  La página de matrícula se puede activar o desactivar. El examen oficial solo estará
+                  visible dentro del rango de fechas y horas indicado (hora de Puerto Rico). Fuera de ese
+                  rango, la ruta redirige al inicio y se ocultan los enlaces.
                 </p>
                 <div className="space-y-6">
                   <div>
                     <label className="input-label">Página de Examen Oficial</label>
-                    <select
-                      value={officialExamEnabled ? 'Activada' : 'Desactivada'}
-                      onChange={(e) => setOfficialExamEnabled(e.target.value === 'Activada')}
-                      className="input-field"
-                    >
-                      <option value="Activada">Activada</option>
-                      <option value="Desactivada">Desactivada</option>
-                    </select>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm text-gray-600">Inicio</label>
+                        <input
+                          type="datetime-local"
+                          value={officialExamStart}
+                          onChange={(e) => setOfficialExamStart(e.target.value)}
+                          className="input-field mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Fin</label>
+                        <input
+                          type="datetime-local"
+                          value={officialExamEnd}
+                          onChange={(e) => setOfficialExamEnd(e.target.value)}
+                          className="input-field mt-1"
+                        />
+                      </div>
+                      <p className="text-sm font-semibold text-navy">
+                        Estado:{' '}
+                        {examWindowStatus === 'unconfigured'
+                          ? 'Sin configurar (oculto)'
+                          : examWindowStatus === 'active'
+                            ? 'Disponible ahora'
+                            : 'Fuera de ventana (oculto)'}
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <label className="input-label">Página de Matrícula</label>

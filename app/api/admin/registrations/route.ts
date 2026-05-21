@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
 import { hasValidAdminSession } from '@/lib/admin-session';
 import { sendWelcomeEmailForRegistration } from '@/lib/registration-email-events';
+import { validateRequiredRegistrationFields } from '@/lib/registration-form-validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,11 +146,22 @@ export async function POST(request: NextRequest) {
     const enrollmentSource = asText(body?.enrollment_source) || 'manual_in_person';
     const internalNotes = asText(body?.internal_notes);
 
-    if (!fullName || !email || !phone || !gender || !birthDate) {
-      return NextResponse.json(
-        { error: 'Faltan campos obligatorios: nombre, email, teléfono, sexo y fecha de nacimiento.' },
-        { status: 400 }
-      );
+    const validationErrors = validateRequiredRegistrationFields({
+      full_name: fullName,
+      last_name: lastName,
+      email,
+      phone,
+      birth_date: birthDate,
+      gender,
+      is_minor: isMinor,
+      parent_guardian_signature: parentGuardianSignature,
+      hair_color: hairColor,
+      eye_color: eyeColor,
+      height_feet: heightFeet,
+      height_inches: heightInches,
+    });
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ error: validationErrors.join(' ') }, { status: 400 });
     }
 
     const amountTotalCents = wantsBookShipping ? AMOUNT_WITH_BOOK_CENTS : AMOUNT_BASE_CENTS;

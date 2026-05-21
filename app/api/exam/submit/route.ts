@@ -44,7 +44,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'questionIds duplicados o incompletos.' }, { status: 400 });
     }
 
-    const access = await validateOfficialExamAccess(email);
+    const access = await validateOfficialExamAccess({
+      email,
+      firstName: String(body.firstName ?? ''),
+      lastName: String(body.lastName ?? ''),
+    });
     if (!access.ok) {
       return NextResponse.json({ error: access.reason }, { status: 403 });
     }

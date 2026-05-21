@@ -19,6 +19,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { User, Ruler, Ship, CheckCircle2, AlertCircle, CreditCard, BookOpen, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
+import { validateRequiredRegistrationFields } from '@/lib/registration-form-validation';
 
 /**
  * Estructura de todos los campos del formulario.
@@ -216,45 +217,21 @@ function MatriculaContent() {
     setIdFile(archivo);
   };
 
-  // Validar todos los campos obligatorios
   const validateForm = (): boolean => {
-    const newErrors: string[] = [];
-
-    if (!formData.fullName.trim()) newErrors.push('Nombre es obligatorio');
-    if (!formData.lastName.trim()) newErrors.push('Apellido es obligatorio');
-    if (!formData.email.trim()) newErrors.push('Correo electrónico es obligatorio');
-    if (!formData.phone.trim()) newErrors.push('Teléfono es obligatorio');
-    if (!formData.birthDate) newErrors.push('Fecha de nacimiento es obligatoria');
-    if (!formData.gender) newErrors.push('Sexo es obligatorio');
-
-    if (formData.isMinor === 'Si') {
-      if (!formData.parentGuardianSignature.trim()) {
-        newErrors.push('Firma de padres o guardián es obligatoria para menores de edad');
-      }
-    }
-
-    if (!formData.hairColor.trim()) newErrors.push('Color de cabello es obligatorio');
-    if (!formData.eyeColor.trim()) newErrors.push('Color de ojos es obligatorio');
-    if (formData.heightFeet === '') newErrors.push('Estatura (pies) es obligatoria');
-    if (formData.heightInches === '') newErrors.push('Estatura (pulgadas) es obligatoria');
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      newErrors.push('El correo electrónico no tiene un formato válido (ej: nombre@correo.com)');
-    }
-
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (formData.phone && phoneDigits.length < 7) {
-      newErrors.push('El teléfono debe tener al menos 7 dígitos');
-    }
-
-    if (formData.birthDate) {
-      const birthYear = new Date(formData.birthDate).getFullYear();
-      const currentYear = new Date().getFullYear();
-      if (birthYear < 1920 || birthYear > currentYear) {
-        newErrors.push('La fecha de nacimiento no parece correcta');
-      }
-    }
+    const newErrors = validateRequiredRegistrationFields({
+      full_name: formData.fullName,
+      last_name: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      birth_date: formData.birthDate,
+      gender: formData.gender,
+      is_minor: formData.isMinor === 'Si',
+      parent_guardian_signature: formData.parentGuardianSignature,
+      hair_color: formData.hairColor,
+      eye_color: formData.eyeColor,
+      height_feet: formData.heightFeet,
+      height_inches: formData.heightInches,
+    });
 
     setErrors(newErrors);
     return newErrors.length === 0;

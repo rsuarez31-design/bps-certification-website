@@ -7,8 +7,8 @@
  * examen, recibe otra permutación distinta de las mismas 75.
  *
  * Características:
- * - Requiere email (se valida contra matrícula pagada)
- * - Máximo 3 intentos en 24 horas tras el pago
+ * - Requiere nombre, apellido y email (validados contra matrícula pagada del curso corriente)
+ * - Máximo 3 intentos durante la ventana publicada del examen
  * - Temporizador de 3 horas
  * - Protección de contenido (clic derecho, Ctrl+P, PrintScreen)
  * - Bloqueo en dispositivos móviles (< 768px)
@@ -46,7 +46,8 @@ export default function ExamenPageClient() {
   const [examStatus, setExamStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
 
   // Datos del estudiante
-  const [studentName, setStudentName] = useState('');
+  const [studentFirstName, setStudentFirstName] = useState('');
+  const [studentLastName, setStudentLastName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [registrationId, setRegistrationId] = useState('');
   const [attemptsUsed, setAttemptsUsed] = useState(0);
@@ -177,7 +178,8 @@ export default function ExamenPageClient() {
 
   // Validar acceso y comenzar examen
   const startExam = async () => {
-    if (!studentName.trim()) { setAccessError('Por favor ingresa tu nombre completo.'); return; }
+    if (!studentFirstName.trim()) { setAccessError('Por favor ingresa tu nombre.'); return; }
+    if (!studentLastName.trim()) { setAccessError('Por favor ingresa tu apellido.'); return; }
     if (!studentEmail.trim()) { setAccessError('Por favor ingresa tu correo electrónico.'); return; }
 
     setAccessError('');
@@ -187,7 +189,11 @@ export default function ExamenPageClient() {
       const res = await fetch('/api/exam/validate-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: studentEmail.trim().toLowerCase() }),
+        body: JSON.stringify({
+          email: studentEmail.trim().toLowerCase(),
+          firstName: studentFirstName.trim(),
+          lastName: studentLastName.trim(),
+        }),
       });
       const data = await res.json();
 
@@ -304,6 +310,8 @@ export default function ExamenPageClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: studentEmail.trim().toLowerCase(),
+          firstName: studentFirstName.trim(),
+          lastName: studentLastName.trim(),
           registrationId,
           totalQuestions: questions.length,
           questionIds: questions.map((q) => q.id),
@@ -516,7 +524,8 @@ export default function ExamenPageClient() {
                 <li>- El examen contiene <strong>75 preguntas</strong> seleccionadas aleatoriamente</li>
                 <li>- Necesitas <strong>80% o más</strong> para aprobar (60 respuestas correctas)</li>
                 <li>- Tienes un <strong>límite de 3 horas</strong> para completar el examen</li>
-                <li>- <strong>Máximo 3 intentos</strong> dentro de las 24 horas después de tu matrícula</li>
+                <li>- <strong>Máximo 3 intentos</strong> durante el periodo publicado del examen oficial</li>
+                <li>- Usa el <strong>mismo nombre, apellido y email</strong> de tu matrícula del curso actual</li>
                 <li>- Al aprobar, recibirás tu certificado digital</li>
               </ul>
             </div>
@@ -529,12 +538,22 @@ export default function ExamenPageClient() {
 
             <div className="space-y-4 mb-8 text-left">
               <div>
-                <label className="input-label">Nombre Completo <span className="text-maritime-red">*</span></label>
+                <label className="input-label">Nombre <span className="text-maritime-red">*</span></label>
                 <input
                   type="text"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="Ingresa tu nombre completo"
+                  value={studentFirstName}
+                  onChange={(e) => setStudentFirstName(e.target.value)}
+                  placeholder="Nombre e inicial del segundo nombre"
+                  className="input-field text-lg"
+                />
+              </div>
+              <div>
+                <label className="input-label">Apellido <span className="text-maritime-red">*</span></label>
+                <input
+                  type="text"
+                  value={studentLastName}
+                  onChange={(e) => setStudentLastName(e.target.value)}
+                  placeholder="Apellidos"
                   className="input-field text-lg"
                 />
               </div>

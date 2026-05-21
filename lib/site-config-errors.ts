@@ -16,3 +16,15 @@ export function isMissingSiteConfigVisibilityColumnsError(err: unknown): boolean
 
 export const SITE_CONFIG_V7_MIGRATION_HINT =
   'Ejecute supabase/migracion-v7-site-config-visibility.sql en el SQL Editor de Supabase.';
+
+export const SITE_CONFIG_V12_MIGRATION_HINT =
+  'Ejecute supabase/migracion-v12-official-exam-window.sql en el SQL Editor de Supabase.';
+
+export function isMissingSiteConfigExamWindowColumnsError(err: unknown): boolean {
+  const e = err as { message?: string; details?: string };
+  const msg = `${e?.message || ''} ${e?.details || ''}`.toLowerCase();
+  return (
+    msg.includes('official_exam_start_at') ||
+    msg.includes('official_exam_end_at')
+  );
+}
