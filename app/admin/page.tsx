@@ -928,7 +928,7 @@ export default function AdminPage() {
     if (!opts.silent) setBankLoading(true);
     setBankError(null);
     try {
-      const res = await fetch('/api/admin/questions');
+      const res = await fetch('/api/admin/questions', { cache: 'no-store' });
       const data = await res.json();
       if (!res.ok) {
         setBankError(data?.error || 'No se pudo cargar el banco de preguntas.');
