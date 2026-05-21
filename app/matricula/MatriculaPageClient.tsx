@@ -27,6 +27,8 @@ interface FormData {
   // Información del curso
   courseName: string;
   courseDate: string;
+  courseMonth: string;
+  courseYear: string;
 
   // Datos personales
   fullName: string;
@@ -94,6 +96,8 @@ function MatriculaContent() {
   const [formData, setFormData] = useState<FormData>({
     courseName: '',
     courseDate: hoy,
+    courseMonth: '',
+    courseYear: '',
     fullName: '',
     lastName: '',
     postalAddress: '',
@@ -144,7 +148,12 @@ function MatriculaContent() {
 
         if (data) {
           const titulo = `Curso Básico De Navegación - ${data.course_month} - ${data.course_year}`;
-          setFormData(prev => ({ ...prev, courseName: titulo }));
+          setFormData(prev => ({
+            ...prev,
+            courseName: titulo,
+            courseMonth: data.course_month || '',
+            courseYear: String(data.course_year ?? ''),
+          }));
         }
       } catch (err) {
         console.warn('No se pudo cargar la configuración del curso:', err);
@@ -271,6 +280,8 @@ function MatriculaContent() {
         .insert({
           course_name: formData.courseName,
           course_date: formData.courseDate,
+          course_month: formData.courseMonth,
+          course_year: formData.courseYear,
           full_name: formData.fullName,
           last_name: formData.lastName,
           postal_address: formData.postalAddress,

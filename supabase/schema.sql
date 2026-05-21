@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS registrations (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   course_name TEXT DEFAULT '',
   course_date TEXT DEFAULT '',
+  course_month TEXT NOT NULL DEFAULT '',
+  course_year TEXT NOT NULL DEFAULT '',
   full_name TEXT NOT NULL,
   nickname TEXT DEFAULT '',
   address TEXT DEFAULT '',

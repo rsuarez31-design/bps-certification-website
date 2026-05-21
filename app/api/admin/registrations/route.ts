@@ -42,6 +42,26 @@ async function buildSignedUrl(path: string): Promise<string | null> {
   }
 }
 
+async function loadSiteConfigCourseSection(): Promise<{ courseMonth: string; courseYear: string }> {
+  const { data } = await supabaseAdmin
+    .from('site_config')
+    .select('course_month, course_year')
+    .eq('id', 'default')
+    .maybeSingle();
+
+  return {
+    courseMonth: asText(data?.course_month),
+    courseYear: data?.course_year != null ? String(data.course_year).trim() : '',
+  };
+}
+
+function buildCourseTitle(month: string, year: string): string {
+  if (month && year) {
+    return `Curso Básico De Navegación - ${month} - ${year}`;
+  }
+  return DEFAULT_COURSE_NAME;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -55,10 +75,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (month && month !== 'Todos') {
-      query = query.ilike('course_name', `%${month}%`);
+      query = query.eq('course_month', month);
     }
     if (year && year !== 'Todos') {
-      query = query.ilike('course_name', `%${year}%`);
+      query = query.eq('course_year', year);
     }
 
     const { data, error } = await query;
@@ -85,7 +105,15 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json();
 
-    const courseName = asText(body?.course_name) || DEFAULT_COURSE_NAME;
+    let courseMonth = asText(body?.course_month);
+    let courseYear = asText(body?.course_year);
+    if (!courseMonth || !courseYear) {
+      const fromConfig = await loadSiteConfigCourseSection();
+      courseMonth = courseMonth || fromConfig.courseMonth;
+      courseYear = courseYear || fromConfig.courseYear;
+    }
+
+    const courseName = asText(body?.course_name) || buildCourseTitle(courseMonth, courseYear);
     const courseDate = asText(body?.course_date) || DEFAULT_COURSE_DATE;
     const fullName = asText(body?.full_name);
     const lastName = asText(body?.last_name);
@@ -129,6 +157,8 @@ export async function POST(request: NextRequest) {
     const payload = {
       course_name: courseName,
       course_date: courseDate,
+      course_month: courseMonth,
+      course_year: courseYear,
       full_name: fullName,
       last_name: lastName,
       postal_address: postalAddress,
@@ -173,10 +203,14 @@ export async function POST(request: NextRequest) {
       .select('*')
       .single());
 
-    if (error && String(error.message || '').includes('enrollment_source')) {
-      // Compatibilidad: si la migración opcional aún no se aplicó,
-      // repetimos el insert sin columnas nuevas.
-      const { enrollment_source: _ignoreSource, internal_notes: _ignoreNotes, ...legacyPayload } = payload;
+    if (error && /enrollment_source|course_month|course_year|internal_notes/i.test(String(error.message || ''))) {
+      const {
+        enrollment_source: _ignoreSource,
+        internal_notes: _ignoreNotes,
+        course_month: _ignoreMonth,
+        course_year: _ignoreYear,
+        ...legacyPayload
+      } = payload;
       insertPayload = legacyPayload;
       ({ data, error } = await supabaseAdmin
         .from('registrations')

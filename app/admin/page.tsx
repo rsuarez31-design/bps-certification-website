@@ -33,6 +33,9 @@ interface Registration {
   created_at: string;
   course_name: string;
   course_date: string;
+  course_month: string;
+  course_year: string;
+  enrollment_source?: string;
   full_name: string;
   last_name: string;
   postal_address: string;
@@ -63,7 +66,7 @@ interface Registration {
   id_document_path: string;
   id_document_url: string | null;
   tracking_number: string;
-  stripe_session_id: string;
+  stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string;
 }
 
@@ -80,6 +83,10 @@ interface ExamAttempt {
   unanswered?: number;
   percentage: number;
   passed: boolean;
+  full_name?: string;
+  last_name?: string;
+  course_month?: string;
+  course_year?: string;
   certificate_pdf_path?: string | null;
   certificate_id?: string | null;
   certificate_issued_at?: string | null;
@@ -142,6 +149,23 @@ interface BankQuestion {
 /** Compara el estado guardado en BD (puede variar mayúsculas) */
 function estadoEsPagado(status: string | null | undefined) {
   return (status || '').toLowerCase().trim() === 'paid';
+}
+
+function buildCourseTitle(month: string, year: string): string {
+  if (month && year) {
+    return `Curso Básico De Navegación - ${month} - ${year}`;
+  }
+  return 'Curso de Navegación';
+}
+
+function formatPaymentMethod(
+  source?: string | null,
+  stripeCheckoutSessionId?: string | null,
+): 'Online' | 'Manual' {
+  if (source === 'manual_in_person') return 'Manual';
+  if (source === 'online_stripe') return 'Online';
+  if (stripeCheckoutSessionId) return 'Online';
+  return 'Online';
 }
 
 // Meses del año para filtros y configuración
@@ -427,16 +451,18 @@ export default function AdminPage() {
   const loadExams = async (opts: { silent?: boolean } = {}) => {
     if (!opts.silent) setIsLoading(true);
     try {
-      const { data: attempts, error } = await supabase
-        .from('exam_attempts')
-        .select('*')
-        .eq('exam_type', 'oficial')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setExamAttempts((attempts || []) as ExamAttempt[]);
+      const res = await fetch('/api/admin/exam-attempts', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Error al cargar examenes:', data?.error || res.status);
+        setExamAttempts([]);
+        return;
+      }
+      setExamAttempts((data.attempts || []) as ExamAttempt[]);
       markFresh('exams');
     } catch (error) {
       console.error('Error al cargar examenes:', error);
+      setExamAttempts([]);
     } finally {
       if (!opts.silent) setIsLoading(false);
     }
@@ -886,6 +912,9 @@ export default function AdminPage() {
         ...manualDraft,
         payment_status: 'paid',
         enrollment_source: 'manual_in_person',
+        course_month: configMonth,
+        course_year: configYear,
+        course_name: manualDraft.course_name || buildCourseTitle(configMonth, configYear),
       };
       const res = await fetch('/api/admin/registrations', {
         method: 'POST',
@@ -1403,7 +1432,15 @@ export default function AdminPage() {
                 </p>
               </div>
               <button
-                onClick={() => setManualModalOpen(true)}
+                onClick={() => {
+                  const hoy = new Date().toISOString().split('T')[0];
+                  setManualDraft({
+                    ...EMPTY_MANUAL_REGISTRATION,
+                    course_name: buildCourseTitle(configMonth, configYear),
+                    course_date: hoy,
+                  });
+                  setManualModalOpen(true);
+                }}
                 className="btn-primary text-sm inline-flex items-center gap-2"
               >
                 <UserPlus className="w-4 h-4" /> Nueva matrícula (pago en persona)
@@ -1417,8 +1454,9 @@ export default function AdminPage() {
             )}
 
             <p className="text-sm text-gray-600 bg-white/80 rounded-lg px-4 py-3 border border-gray-200">
-              <strong>Filtro por sección del curso:</strong> los selectores <em>Mes</em> y <em>Año</em> buscan dentro del{' '}
-              <strong>título del curso</strong> (ej. &quot;Curso… - Agosto - 2026&quot;).
+              <strong>Filtro por sección del curso:</strong> los selectores <em>Mes</em> y <em>Año</em> filtran por{' '}
+              <strong>mes y año de la matrícula</strong> (columnas <code className="bg-gray-100 px-1 rounded">course_month</code> /{' '}
+              <code className="bg-gray-100 px-1 rounded">course_year</code>).
               Si no ves a alguien, prueba <strong>Mes: Todos</strong> y <strong>Año: Todos</strong>.
             </p>
 
@@ -1494,7 +1532,7 @@ export default function AdminPage() {
                 {(filterMonth !== 'Todos' || filterYear !== 'Todos') ? (
                   <div className="space-y-3">
                     <p className="text-sm">
-                      Es muy probable que el <strong>título del curso</strong> de la matrícula no contenga el mes o año que elegiste arriba.
+                      Es posible que la matrícula no tenga mes/año registrados (matrículas manuales antiguas).
                       Pulsa el botón para mostrar todas las secciones.
                     </p>
                     <button
@@ -1522,10 +1560,10 @@ export default function AdminPage() {
                     <tr>
                       <th className="py-4 px-4 text-left">Nombre</th>
                       <th className="py-4 px-4 text-left">Apellido</th>
-                      <th className="py-4 px-4 text-left">Teléfono</th>
-                      <th className="py-4 px-4 text-left">Pueblo</th>
+                      <th className="py-4 px-4 text-left">Mes del curso</th>
+                      <th className="py-4 px-4 text-left">Año del curso</th>
                       <th className="py-4 px-4 text-left">Email</th>
-                      <th className="py-4 px-4 text-center">Estado Pago</th>
+                      <th className="py-4 px-4 text-center">Método de Pago</th>
                       <th className="py-4 px-4 text-center">Acciones</th>
                     </tr>
                   </thead>
@@ -1534,16 +1572,12 @@ export default function AdminPage() {
                       <tr key={reg.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-4 font-semibold">{reg.full_name}</td>
                         <td className="py-3 px-4">{reg.last_name || '—'}</td>
-                        <td className="py-3 px-4">{reg.phone || '—'}</td>
-                        <td className="py-3 px-4">{reg.city || '—'}</td>
+                        <td className="py-3 px-4">{reg.course_month || '—'}</td>
+                        <td className="py-3 px-4">{reg.course_year || '—'}</td>
                         <td className="py-3 px-4 text-sm">{reg.email}</td>
                         <td className="py-3 px-4 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            estadoEsPagado(reg.payment_status)
-                              ? 'bg-maritime-green/20 text-maritime-green'
-                              : 'bg-maritime-gold/20 text-maritime-gold'
-                          }`}>
-                            {estadoEsPagado(reg.payment_status) ? 'Pagada' : 'Pendiente'}
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-navy/10 text-navy">
+                            {formatPaymentMethod(reg.enrollment_source, reg.stripe_checkout_session_id)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -1611,6 +1645,14 @@ export default function AdminPage() {
                 <div className="md:col-span-2 bg-navy/5 rounded-lg p-4 mb-2">
                   <h3 className="font-bold text-navy mb-2">Información del Curso</h3>
                   <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-gray-500">Mes del curso:</span>{' '}
+                      <span className="font-semibold">{selectedRegistration.course_month || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Año del curso:</span>{' '}
+                      <span className="font-semibold">{selectedRegistration.course_year || '—'}</span>
+                    </div>
                     <div>
                       <span className="text-gray-500">Título:</span>{' '}
                       {isEditingRegistration ? (
@@ -2048,18 +2090,23 @@ export default function AdminPage() {
                 <table className="w-full bg-white rounded-xl shadow-md overflow-hidden">
                   <thead className="bg-navy text-white">
                     <tr>
-                      <th className="py-4 px-6 text-left">Estudiante</th>
+                      <th className="py-4 px-4 text-left">Nombre</th>
+                      <th className="py-4 px-4 text-left">Apellido</th>
+                      <th className="py-4 px-4 text-left">Mes del curso</th>
+                      <th className="py-4 px-4 text-left">Año del curso</th>
                       <th className="py-4 px-6 text-center">Correctas</th>
                       <th className="py-4 px-6 text-center">Incorrectas</th>
                       <th className="py-4 px-6 text-center">Porcentaje</th>
                       <th className="py-4 px-6 text-center">Resultado</th>
-                      <th className="py-4 px-6 text-left">Fecha</th>
                     </tr>
                   </thead>
                   <tbody>
                     {examAttempts.map(attempt => (
                       <tr key={attempt.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-4 px-6 font-semibold">{attempt.student_name}</td>
+                        <td className="py-4 px-4 font-semibold">{attempt.full_name || attempt.student_name || '—'}</td>
+                        <td className="py-4 px-4">{attempt.last_name || '—'}</td>
+                        <td className="py-4 px-4">{attempt.course_month || '—'}</td>
+                        <td className="py-4 px-4">{attempt.course_year || '—'}</td>
                         <td className="py-4 px-6 text-center text-maritime-green font-bold">{attempt.correct_answers}</td>
                         <td className="py-4 px-6 text-center text-maritime-red font-bold">{attempt.incorrect_answers}</td>
                         <td className="py-4 px-6 text-center font-bold">{attempt.percentage}%</td>
@@ -2068,7 +2115,6 @@ export default function AdminPage() {
                             ? <span className="bg-maritime-green/20 text-maritime-green px-3 py-1 rounded-full text-sm font-bold">Aprobado</span>
                             : <span className="bg-maritime-red/20 text-maritime-red px-3 py-1 rounded-full text-sm font-bold">No Aprobado</span>}
                         </td>
-                        <td className="py-4 px-6 text-sm text-gray-600">{new Date(attempt.created_at).toLocaleDateString('es-PR', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                       </tr>
                     ))}
                   </tbody>
